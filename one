@@ -1,1 +1,64 @@
+db_name = "test_db"
+spark.sql(f"CREATE DATABASE IF NOT EXISTS {db_name}")
+print(f"Database {db_name} created or already exists.")
+
+spark.sql(f"USE {db_name}")
+table_name = "test_table"
+spark.sql(f"""
+    CREATE OR REPLACE TEMPORARY VIEW {table_name} AS
+    SELECT 1 AS id, 'Alice' AS name
+    UNION ALL
+    SELECT 2, 'Bob'
+    UNION ALL
+    SELECT 3, 'Charlie'
+""")
+print(f"Temporary view {table_name} created in database {db_name}.")
+
+df = spark.sql(f"SELECT * FROM {table_name}")
+df.show()
+
+spark.sql("""
+CREATE TABLE test_table_managed (
+    id INT,
+    name STRING
+)
+USING DELTA
+""")
+print("Managed Delta table created in Hive metastore.")
+
+spark.sql("""
+INSERT INTO test_table_managed VALUES
+(1, 'Alice'),
+(2, 'Bob'),
+(3, 'Charlie')
+""")
+print("Data inserted into managed Delta table.")
+
+delta_table_path_external = "/mnt/delta/test_table_external"
+spark.sql(f"""
+CREATE TABLE test_table_external (
+    id INT,
+    name STRING
+)
+USING DELTA
+LOCATION '{delta_table_path_external}'
+""")
+print(f"External Delta table created at {delta_table_path_external}.")
+
+spark.sql("""
+INSERT INTO test_table_external VALUES
+(4, 'Diana'),
+(5, 'Eva'),
+(6, 'Frank')
+""")
+print("Data inserted into external Delta table.")
+
+print("Data from managed Delta table:")
+spark.sql("SELECT * FROM test_table_managed").show()
+
+print("Data from external Delta table:")
+spark.sql("SELECT * FROM test_table_external").show()
+
+
+
 
