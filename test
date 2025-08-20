@@ -1,0 +1,71 @@
+-- Normalize SKU names to stable buckets for clean columns
+with base as (
+  select
+    custom_tags['DPE_APP_ID'] as dpe_app_id,
+    usage_usd,
+    case
+      when lower(sku_name) like '%all_purpose%' then 'ALL_PURPOSE'
+      when lower(sku_name) like '%jobs%'        then 'JOBS'
+      when lower(sku_name) like '%sql%'         then 'SQL'
+      when lower(sku_name) like '%dlt%'         then 'DLT'
+      else 'OTHER'
+    end as sku_family
+  from list_priced_usd_with_time_key
+  where custom_tags['DPE_APP_ID'] is not null
+),
+agg as (
+  select dpe_app_id, sku_family, sum(usage_usd) as usd
+  from base
+  group by 1,2
+)
+select
+  dpe_app_id,
+  sum(case when sku_family='ALL_PURPOSE' then usd else 0 end) as all_purpose_usd,
+  sum(case when sku_family='JOBS'        then usd else 0 end) as jobs_usd,
+  sum(case when sku_family='SQL'         then usd else 0 end) as sql_usd,
+  sum(case when sku_family='DLT'         then usd else 0 end) as dlt_usd,
+  sum(case when sku_family='OTHER'       then usd else 0 end) as other_usd,
+  sum(usd) as total_usd
+from agg
+group by dpe_app_id
+order by total_usd desc;
+
+
+
+
+
+
+
+
+
+with base as (
+  select
+    custom_tags['DPE_APP_ID'] as dpe_app_id,
+    sku_name,
+    usage_usd
+  from list_priced_usd_with_time_key
+  where custom_tags['DPE_APP_ID'] is not null
+),
+agg as (
+  select dpe_app_id, sku_name, sum(usage_usd) as usd
+  from base
+  group by 1,2
+)
+select *
+from agg
+pivot (
+  sum(usd) for sku_name in (
+    'ENTERPRISE_ALL_PURPOSE_COMPUTE',
+    'ENTERPRISE_ALL_PURPOSE_COMPUTE (PHOTON)',
+    'ENTERPRISE_JOBS_COMPUTE',
+    'ENTERPRISE_JOBS_COMPUTE (PHOTON)',
+    'ENTERPRISE_SQL_PRO_COMPUTE',
+    'ENTERPRISE_SQL_PRO_COMPUTE US EAST (PHOTON)',
+    'ENTERPRISE_DLT_CORE_COMPUTE',
+    'ENTERPRISE_DLT_ADVANCED_COMPUTE',
+    'ENTERPRISE_DLT_ADVANCED_COMPUTE (PHOTON)'
+  )
+)
+order by coalesce(`ENTERPRISE_ALL_PURPOSE_COMPUTE`,0) +
+         coalesce(`ENTERPRISE_JOBS_COMPUTE`,0) +
+         coalesce(`ENTERPRISE_SQL_PRO_COMPUTE`,0) desc;
