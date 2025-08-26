@@ -1,1 +1,48 @@
+OLD_INSTANCE_ID="i-OLDXXXXXXXXXXXXXX"
+NEW_INSTANCE_ID="i-NEWXXXXXXXXXXXXXX"
+
+ROOT_VOL=$(aws ec2 describe-instances --instance-ids "$OLD_INSTANCE_ID" \
+  --query "Reservations[0].Instances[0].BlockDeviceMappings[?DeviceName=='/dev/xvda'].Ebs.VolumeId" \
+  --output text)
+
+SNAP_ID=$(aws ec2 create-snapshot --volume-id "$ROOT_VOL" \
+  --description "pre-redeploy root backup of $OLD_INSTANCE_ID" \
+  --query SnapshotId --output text)
+
+aws ec2 create-tags --resources "$SNAP_ID" --tags \
+  Key=Name,Value="root-backup-$(date +%F)" \
+  Key=SourceInstance,Value="$OLD_INSTANCE_ID" \
+  Key=SourceVolume,Value="$ROOT_VOL"
+
+aws ec2 wait snapshot-completed --snapshot-ids "$SNAP_ID"
+
+AZ=$(aws ec2 describe-instances --instance-ids "$NEW_INSTANCE_ID" \
+  --query "Reservations[0].Instances[0].Placement.AvailabilityZone" \
+  --output text)
+
+RESTORE_VOL=$(aws ec2 create-volume \
+  --snapshot-id "$SNAP_ID" \
+  --availability-zone "$AZ" \
+  --volume-type gp3 \
+  --tag-specifications 'ResourceType=volume,Tags=[{Key=Name,Value=restore-root-backup}]' \
+  --query VolumeId --output text)
+
+aws ec2 wait volume-available --volume-ids "$RESTORE_VOL"
+
+aws ec2 attach-volume --volume-id "$RESTORE_VOL" \
+  --instance-id "$NEW_INSTANCE_ID" \
+  --device /dev/sdf
+
+echo "Snapshot: $SNAP_ID"
+echo "Attached volume: $RESTORE_VOL to $NEW_INSTANCE_ID"
+
+
+
+
+
+
+lsblk
+sudo mkdir -p /mnt/old
+sudo mount /dev/nvme1n1p1 /mnt/old || sudo mount /dev/nvme1n1 /mnt/old
+ls /mnt/old
 
