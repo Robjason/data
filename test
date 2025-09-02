@@ -1,1 +1,21 @@
+-- ===== New block for Per-SKU by App Team =====
+, usage_by_app_team_and_sku AS (
+  SELECT
+    u.time_key,
+    COALESCE(u.billing_origin_product, u.sku_name) AS sku_name,
+    u.custom_tags['DPE_APP_ID']                   AS app_team,   -- or use element_at(u.custom_tags, :param_single_tag_key)
+    u.usage_usd
+  FROM list_priced_usd_with_time_key u
+)
+
+SELECT
+  time_key   AS period,
+  app_team,
+  sku_name,
+  SUM(usage_usd) AS cost_usd
+FROM usage_by_app_team_and_sku
+WHERE app_team IS NOT NULL
+  AND ({{app_team_filter}} IS NULL OR app_team IN ({{app_team_filter}}))
+GROUP BY period, app_team, sku_name
+ORDER BY period DESC, app_team, sku_name;
 
