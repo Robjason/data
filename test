@@ -1,104 +1,11 @@
-SELECT DISTINCT sku_name
-FROM system.billing.usage
-WHERE CAST(usage_date AS DATE) BETWEEN :param_start_date AND :param_end_date
-ORDER BY 1;
-
-
-
--- =========================================================
--- Per-Team (by tag key) SKU cost from system.billing.usage
--- Matches your schema: sku_name, usage_* , custom_tags
--- =========================================================
-
-WITH usage_base AS (
-  SELECT
-    u.workspace_id,
-    u.sku_name,
-    u.usage_start_time,
-    u.usage_end_time,
-    CAST(u.usage_date AS TIMESTAMP) AS usage_ts,
-    u.usage_quantity,
-    -- Choose which tag is "team" via :team_tag_key; fallback to common ones
-    LOWER(TRIM(
-      CASE LOWER(:team_tag_key)
-        WHEN 'app_name'       THEN element_at(u.custom_tags,'APP_NAME')
-        WHEN 'msdb_app_name'  THEN element_at(u.custom_tags,'MSDB_APP_NAME')
-        WHEN 'app_code'       THEN element_at(u.custom_tags,'APP_CODE')
-        WHEN 'env_name'       THEN element_at(u.custom_tags,'ENV_NAME')
-        ELSE COALESCE(
-               element_at(u.custom_tags,'APP_NAME'),
-               element_at(u.custom_tags,'MSDB_APP_NAME'),
-               element_at(u.custom_tags,'APP_CODE'),
-               element_at(u.custom_tags,'ENV_NAME')
-             )
-      END
-    )) AS app_team
-  FROM system.billing.usage u
-  WHERE CAST(u.usage_date AS DATE) >= :param_start_date
-    AND CAST(u.usage_date AS DATE) <  :param_end_date
+WITH u AS (
+  SELECT DISTINCT sku_name FROM system.billing.usage
 ),
-
--- USD list prices (your table uses sku_name)
-prices AS (
-  SELECT
-    sku_name,
-    price_start_time,
-    COALESCE(price_end_time, date_add(current_date, 1)) AS price_end_time,
-    COALESCE(pricing['default'], pricing.default)       AS unit_price_usd
-  FROM system.billing.list_prices
-  WHERE currency_code = 'USD'
-),
-
--- Join usage to prices; consider a price valid if windows overlap
-priced AS (
-  SELECT
-    ub.sku_name,
-    ub.app_team,
-    CASE LOWER(:param_time_key)
-      WHEN 'week'    THEN date_trunc('week',    ub.usage_ts)
-      WHEN 'month'   THEN date_trunc('month',   ub.usage_ts)
-      WHEN 'quarter' THEN date_trunc('quarter', ub.usage_ts)
-      ELSE date_trunc('week', ub.usage_ts)
-    END AS period,
-    COALESCE(ub.usage_quantity, 0) * COALESCE(p.unit_price_usd, 0) AS list_cost_usd
-  FROM usage_base ub
-  LEFT JOIN prices p
-    ON ub.sku_name = p.sku_name
-   AND ub.usage_start_time <  p.price_end_time
-   AND ub.usage_end_time   >= p.price_start_time
-),
-
--- Optional discounts (empty by default). Replace with your real table if needed.
-discounts AS (
-  SELECT CAST(NULL AS STRING) AS sku_name, CAST(NULL AS DOUBLE) AS discount_percent WHERE 1=0
-  -- Example rules:
-  -- UNION ALL SELECT 'PREMIUM_SQL_PRO_COMPUTE_US_CENTRAL', 0.40
-  -- UNION ALL SELECT 'PREMIUM_ALL_PURPOSE_COMPUTE_(PHOTON)', 0.40
-),
-
-finalized AS (
-  SELECT
-    pr.sku_name,
-    pr.app_team,
-    pr.period,
-    pr.list_cost_usd                                         AS cost_usd_before_discount,
-    pr.list_cost_usd * (1 - COALESCE(d.discount_percent,0))  AS cost_usd_after_discount
-  FROM priced pr
-  LEFT JOIN discounts d
-    ON pr.sku_name = d.sku_name
+p AS (
+  SELECT DISTINCT sku_name FROM system.billing.list_prices WHERE currency_code = 'USD'
 )
-
-SELECT
-  sku_name,
-  app_team,
-  SUM(cost_usd_after_discount)  AS total_cost_usd,            -- discounted
-  SUM(cost_usd_before_discount) AS list_cost_usd,             -- before discount
-  SUM(cost_usd_before_discount) - SUM(cost_usd_after_discount) AS discount_usd
-FROM finalized
-WHERE app_team IS NOT NULL
-  AND (:team_filter IS NULL OR app_team = LOWER(TRIM(:team_filter)))
-  AND (:sku_filter  IS NULL OR sku_name = :sku_filter)         -- exact match
-  AND DATE(period) >= CAST(:param_start_date AS DATE)
-  AND DATE(period) <  CAST(:param_end_date   AS DATE)
-GROUP BY sku_name, app_team
-ORDER BY app_team, total_cost_usd DESC;
+SELECT u.sku_name,
+       CASE WHEN p.sku_name IS NULL THEN 'MISSING_IN_PRICES' ELSE 'OK' END AS price_cover
+FROM u
+LEFT JOIN p USING (sku_name)
+ORDER BY 1;
