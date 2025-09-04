@@ -1,10 +1,11 @@
 -- =========================================================
--- SKU cost per App Team (system.billing.usage + list_prices)
--- Works with columns you showed: sku_name, usage_* , custom_tags
--- Params: :param_start_date, :param_end_date, :param_time_key, :app_team_filter, :sku_filter
+-- Per-Team (by tag key) SKU cost from system.billing.usage
+-- Works with: sku_name, usage_start_time/end_time, usage_date, custom_tags
+-- Params: :param_start_date, :param_end_date, :param_time_key,
+--         :team_tag_key (e.g., 'APP_NAME' | 'MSDB_APP_NAME' | 'APP_CODE' | 'ENV_NAME'),
+--         :team_filter (optional), :sku_filter (optional)
 -- =========================================================
 
--- 1) Normalize usage and extract team tag
 WITH usage_base AS (
   SELECT
     u.workspace_id,
@@ -13,24 +14,29 @@ WITH usage_base AS (
     u.usage_end_time,
     CAST(u.usage_date AS TIMESTAMP) AS usage_ts,
     u.usage_quantity,
-    -- normalize app/team tag (keys are case-sensitive; coalesce common variants)
-    LOWER(COALESCE(
-      element_at(u.custom_tags,'app_name'),
-      element_at(u.custom_tags,'APP_NAME'),
-      element_at(u.custom_tags,'application'),
-      element_at(u.custom_tags,'APPLICATION'),
-      element_at(u.custom_tags,'team'),
-      element_at(u.custom_tags,'TEAM')
+    -- Choose which tag is the "team" based on :team_tag_key; fallback to common keys
+    LOWER(TRIM(
+      CASE LOWER(:team_tag_key)
+        WHEN 'app_name'       THEN element_at(u.custom_tags,'APP_NAME')
+        WHEN 'msdb_app_name'  THEN element_at(u.custom_tags,'MSDB_APP_NAME')
+        WHEN 'app_code'       THEN element_at(u.custom_tags,'APP_CODE')
+        WHEN 'env_name'       THEN element_at(u.custom_tags,'ENV_NAME')
+        ELSE COALESCE(
+               element_at(u.custom_tags,'APP_NAME'),
+               element_at(u.custom_tags,'MSDB_APP_NAME'),
+               element_at(u.custom_tags,'APP_CODE'),
+               element_at(u.custom_tags,'ENV_NAME')
+             )
+      END
     )) AS app_team
   FROM system.billing.usage u
   WHERE CAST(u.usage_date AS DATE) >= :param_start_date
     AND CAST(u.usage_date AS DATE) <  :param_end_date
 ),
 
--- 2) USD list prices for SKUs (guard missing end_time, pull default price)
 prices AS (
   SELECT
-    sku AS sku_name,
+    sku AS sku_name,  -- list_prices uses `sku`; alias to match usage.sku_name
     price_start_time,
     COALESCE(price_end_time, date_add(current_date, 1)) AS price_end_time,
     COALESCE(pricing['default'], pricing.default)       AS unit_price_usd
@@ -38,7 +44,6 @@ prices AS (
   WHERE currency_code = 'USD'
 ),
 
--- 3) Join usage to prices (strict end bound to avoid fencepost issues)
 priced AS (
   SELECT
     ub.sku_name,
@@ -49,24 +54,23 @@ priced AS (
       WHEN 'quarter' THEN date_trunc('quarter', ub.usage_ts)
       ELSE date_trunc('week', ub.usage_ts)
     END AS period,
-    -- if price or quantity is NULL, treat as 0 to keep the row
     COALESCE(ub.usage_quantity, 0) * COALESCE(p.unit_price_usd, 0) AS list_cost_usd
   FROM usage_base ub
   LEFT JOIN prices p
     ON ub.sku_name = p.sku_name
-   AND ub.usage_end_time >= p.price_start_time
-   AND ub.usage_end_time <  p.price_end_time
+   -- treat a price as matching if windows overlap (start < price_end AND end >= price_start)
+   AND ub.usage_start_time <  p.price_end_time
+   AND ub.usage_end_time   >= p.price_start_time
 ),
 
--- 4) (Optional) per-SKU discounts. Replace with your table if you have one.
---    If you don't want discounts, keep this CTE empty by selecting no rows.
+-- Optional discounts (empty by default; replace with your table if needed)
 discounts AS (
-  SELECT 'PREMIUM_SQL_PRO_COMPUTE_US_CENTRAL'     AS sku_name, 0.40 AS discount_percent
-  UNION ALL
-  SELECT 'PREMIUM_ALL_PURPOSE_COMPUTE_(PHOTON)'   AS sku_name, 0.40 AS discount_percent
+  SELECT CAST(NULL AS STRING) AS sku_name, CAST(NULL AS DOUBLE) AS discount_percent WHERE 1=0
+  -- Example:
+  -- UNION ALL SELECT 'PREMIUM_SQL_PRO_COMPUTE_US_CENTRAL', 0.40
+  -- UNION ALL SELECT 'PREMIUM_ALL_PURPOSE_COMPUTE_(PHOTON)', 0.40
 ),
 
--- 5) Apply discount if a rule exists for the SKU
 finalized AS (
   SELECT
     pr.sku_name,
@@ -79,17 +83,16 @@ finalized AS (
     ON pr.sku_name = d.sku_name
 )
 
--- 6) Output: per App Team & SKU over period window
 SELECT
   sku_name,
   app_team,
-  SUM(cost_usd_after_discount)  AS total_cost_usd,           -- discounted
-  SUM(cost_usd_before_discount) AS list_cost_usd,            -- before discount
+  SUM(cost_usd_after_discount)  AS total_cost_usd,            -- after discount
+  SUM(cost_usd_before_discount) AS list_cost_usd,             -- before discount
   SUM(cost_usd_before_discount) - SUM(cost_usd_after_discount) AS discount_usd
 FROM finalized
 WHERE app_team IS NOT NULL
-  AND (:app_team_filter IS NULL OR LOWER(app_team) = LOWER(:app_team_filter))
-  AND (:sku_filter      IS NULL OR sku_name IN (:sku_filter))
+  AND (:team_filter IS NULL OR app_team = LOWER(TRIM(:team_filter)))
+  AND (:sku_filter  IS NULL OR sku_name = :sku_filter)
   AND DATE(period) >= CAST(:param_start_date AS DATE)
   AND DATE(period) <  CAST(:param_end_date   AS DATE)
 GROUP BY sku_name, app_team
