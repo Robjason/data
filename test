@@ -1,9 +1,13 @@
+SELECT DISTINCT sku_name
+FROM system.billing.usage
+WHERE CAST(usage_date AS DATE) BETWEEN :param_start_date AND :param_end_date
+ORDER BY 1;
+
+
+
 -- =========================================================
 -- Per-Team (by tag key) SKU cost from system.billing.usage
--- Works with: sku_name, usage_start_time/end_time, usage_date, custom_tags
--- Params: :param_start_date, :param_end_date, :param_time_key,
---         :team_tag_key (e.g., 'APP_NAME' | 'MSDB_APP_NAME' | 'APP_CODE' | 'ENV_NAME'),
---         :team_filter (optional), :sku_filter (optional)
+-- Matches your schema: sku_name, usage_* , custom_tags
 -- =========================================================
 
 WITH usage_base AS (
@@ -14,7 +18,7 @@ WITH usage_base AS (
     u.usage_end_time,
     CAST(u.usage_date AS TIMESTAMP) AS usage_ts,
     u.usage_quantity,
-    -- Choose which tag is the "team" based on :team_tag_key; fallback to common keys
+    -- Choose which tag is "team" via :team_tag_key; fallback to common ones
     LOWER(TRIM(
       CASE LOWER(:team_tag_key)
         WHEN 'app_name'       THEN element_at(u.custom_tags,'APP_NAME')
@@ -34,9 +38,10 @@ WITH usage_base AS (
     AND CAST(u.usage_date AS DATE) <  :param_end_date
 ),
 
+-- USD list prices (your table uses sku_name)
 prices AS (
   SELECT
-    sku AS sku_name,  -- list_prices uses `sku`; alias to match usage.sku_name
+    sku_name,
     price_start_time,
     COALESCE(price_end_time, date_add(current_date, 1)) AS price_end_time,
     COALESCE(pricing['default'], pricing.default)       AS unit_price_usd
@@ -44,6 +49,7 @@ prices AS (
   WHERE currency_code = 'USD'
 ),
 
+-- Join usage to prices; consider a price valid if windows overlap
 priced AS (
   SELECT
     ub.sku_name,
@@ -58,15 +64,14 @@ priced AS (
   FROM usage_base ub
   LEFT JOIN prices p
     ON ub.sku_name = p.sku_name
-   -- treat a price as matching if windows overlap (start < price_end AND end >= price_start)
    AND ub.usage_start_time <  p.price_end_time
    AND ub.usage_end_time   >= p.price_start_time
 ),
 
--- Optional discounts (empty by default; replace with your table if needed)
+-- Optional discounts (empty by default). Replace with your real table if needed.
 discounts AS (
   SELECT CAST(NULL AS STRING) AS sku_name, CAST(NULL AS DOUBLE) AS discount_percent WHERE 1=0
-  -- Example:
+  -- Example rules:
   -- UNION ALL SELECT 'PREMIUM_SQL_PRO_COMPUTE_US_CENTRAL', 0.40
   -- UNION ALL SELECT 'PREMIUM_ALL_PURPOSE_COMPUTE_(PHOTON)', 0.40
 ),
@@ -86,13 +91,13 @@ finalized AS (
 SELECT
   sku_name,
   app_team,
-  SUM(cost_usd_after_discount)  AS total_cost_usd,            -- after discount
+  SUM(cost_usd_after_discount)  AS total_cost_usd,            -- discounted
   SUM(cost_usd_before_discount) AS list_cost_usd,             -- before discount
   SUM(cost_usd_before_discount) - SUM(cost_usd_after_discount) AS discount_usd
 FROM finalized
 WHERE app_team IS NOT NULL
   AND (:team_filter IS NULL OR app_team = LOWER(TRIM(:team_filter)))
-  AND (:sku_filter  IS NULL OR sku_name = :sku_filter)
+  AND (:sku_filter  IS NULL OR sku_name = :sku_filter)         -- exact match
   AND DATE(period) >= CAST(:param_start_date AS DATE)
   AND DATE(period) <  CAST(:param_end_date   AS DATE)
 GROUP BY sku_name, app_team
