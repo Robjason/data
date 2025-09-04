@@ -1,81 +1,38 @@
--- Per-team per-SKU cost (system.billing.usage + list_prices, USD)
--- Uses the tag keys you have: APP_NAME, MSDB_APP_NAME, APP_CODE, ENV_NAME
-
-WITH usage_base AS (
-  SELECT
-    u.workspace_id,
-    u.sku_name,
-    u.usage_start_time,
-    u.usage_end_time,
-    CAST(u.usage_date AS TIMESTAMP) AS usage_ts,
-    u.usage_quantity,
-    -- coalesce several tag keys; default to 'unknown' so rows never drop
-    LOWER(TRIM(COALESCE(
-      element_at(u.custom_tags,'APP_NAME'),
-      element_at(u.custom_tags,'MSDB_APP_NAME'),
-      element_at(u.custom_tags,'APP_CODE'),
-      element_at(u.custom_tags,'ENV_NAME'),
-      'unknown'
-    ))) AS app_team
-  FROM system.billing.usage u
-  WHERE (:param_start_date IS NULL OR CAST(u.usage_date AS DATE) >= CAST(:param_start_date AS DATE))
-    AND (:param_end_date   IS NULL OR CAST(u.usage_date AS DATE) <  CAST(:param_end_date   AS DATE))
-),
-
-prices AS (
+WITH prices AS (
   SELECT
     sku_name,
+    usage_unit,
+    pricing.default                                 AS unit_price_usd,
     price_start_time,
-    COALESCE(price_end_time, date_add(current_date, 1)) AS price_end_time,
-    COALESCE(pricing['default'], pricing.default)       AS unit_price_usd
+    COALESCE(price_end_time, date_add(current_date, 1)) AS price_end_time
   FROM system.billing.list_prices
   WHERE currency_code = 'USD'
 ),
 
-priced AS (
+usage_priced AS (
   SELECT
-    ub.sku_name,
-    ub.app_team,
-    CASE LOWER(:param_time_key)
-      WHEN 'week'    THEN date_trunc('week',    ub.usage_ts)
-      WHEN 'month'   THEN date_trunc('month',   ub.usage_ts)
-      WHEN 'quarter' THEN date_trunc('quarter', ub.usage_ts)
-      ELSE date_trunc('week', ub.usage_ts)
-    END AS period,
-    COALESCE(ub.usage_quantity, 0) * COALESCE(p.unit_price_usd, 0) AS list_cost_usd
-  FROM usage_base ub
+    u.sku_name,
+    u.custom_tags['DPE_APP_ID']                 AS dpe_id,
+    DATE_TRUNC('MONTH', u.usage_date)           AS usage_month,
+    u.usage_quantity,
+    p.unit_price_usd,
+    -- Cost = usage qty × unit price
+    (u.usage_quantity * p.unit_price_usd)       AS usage_usd
+  FROM system.billing.usage u
   LEFT JOIN prices p
-    ON ub.sku_name = p.sku_name
-   -- consider a price valid when windows overlap
-   AND ub.usage_start_time <  p.price_end_time
-   AND ub.usage_end_time   >= p.price_start_time
-),
-
--- Optional: per-SKU discounts (leave empty, or replace with your table)
-discounts AS (
-  SELECT CAST(NULL AS STRING) AS sku_name, CAST(NULL AS DOUBLE) AS discount_percent WHERE 1=0
-),
-
-finalized AS (
-  SELECT
-    pr.sku_name,
-    pr.app_team,
-    pr.period,
-    pr.list_cost_usd                                         AS cost_usd_before_discount,
-    pr.list_cost_usd * (1 - COALESCE(d.discount_percent,0))  AS cost_usd_after_discount
-  FROM priced pr
-  LEFT JOIN discounts d
-    ON pr.sku_name = d.sku_name
+    ON u.sku_name        = p.sku_name
+   AND u.usage_unit      = p.usage_unit
+   AND u.usage_end_time BETWEEN p.price_start_time AND p.price_end_time
+  WHERE u.custom_tags['DPE_APP_ID'] IS NOT NULL
+    AND u.usage_date >= DATE('2024-06-01')   -- start date
+    AND u.usage_date <= DATE('2025-07-31')   -- end date
 )
 
 SELECT
+  dpe_id,
   sku_name,
-  app_team,
-  SUM(cost_usd_after_discount)  AS total_cost_usd,
-  SUM(cost_usd_before_discount) AS list_cost_usd,
-  SUM(cost_usd_before_discount) - SUM(cost_usd_after_discount) AS discount_usd
-FROM finalized
-WHERE (:team_filter IS NULL OR app_team = LOWER(TRIM(:team_filter)))
-  AND (:sku_filter  IS NULL OR sku_name = :sku_filter)   -- exact name if used
-GROUP BY sku_name, app_team
-ORDER BY app_team, total_cost_usd DESC;
+  usage_month,
+  ROUND(SUM(usage_usd), 2) AS total_spend_usd
+FROM usage_priced
+GROUP BY dpe_id, sku_name, usage_month
+ORDER BY total_spend_usd DESC;
