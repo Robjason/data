@@ -1,17 +1,18 @@
--- A) Do we have usage rows in the window?
-SELECT COUNT(*) AS n_rows
-FROM system.billing.usage
-WHERE CAST(usage_date AS DATE) >= :param_start_date
-  AND CAST(usage_date AS DATE) <  :param_end_date;
+-- What catalog/schema am I on?
+SELECT current_catalog() AS catalog, current_schema() AS schema;
 
--- B) What tag keys exist on THIS table?
-SELECT k, COUNT(*) AS n
-FROM (
-  SELECT explode(map_keys(custom_tags)) AS k
-  FROM system.billing.usage
-  WHERE CAST(usage_date AS DATE) >= :param_start_date
-    AND CAST(usage_date AS DATE) <  :param_end_date
-) t
-GROUP BY k
-ORDER BY n DESC
-LIMIT 50;
+-- Does the table exist?
+SHOW TABLES IN system.billing;
+
+-- Any rows at all (no date filter)?
+SELECT COUNT(*) AS n_rows_total
+FROM system.billing.usage;
+
+-- If >0, what’s the date range present?
+SELECT MIN(CAST(usage_date AS DATE)) AS min_d, MAX(CAST(usage_date AS DATE)) AS max_d
+FROM system.billing.usage;
+
+-- Peek a few rows to confirm column names
+SELECT *
+FROM system.billing.usage
+LIMIT 20;
