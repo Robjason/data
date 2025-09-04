@@ -1,12 +1,81 @@
-SELECT LOWER(TRIM(COALESCE(
-         element_at(custom_tags,'APP_NAME'),
-         element_at(custom_tags,'MSDB_APP_NAME'),
-         element_at(custom_tags,'APP_CODE'),
-         element_at(custom_tags,'ENV_NAME'),
-         'unknown'
-       ))) AS team_value,
-       COUNT(*) AS n
-FROM system.billing.usage
-GROUP BY team_value
-ORDER BY n DESC
-LIMIT 50;
+-- Per-team per-SKU cost (system.billing.usage + list_prices, USD)
+-- Uses the tag keys you have: APP_NAME, MSDB_APP_NAME, APP_CODE, ENV_NAME
+
+WITH usage_base AS (
+  SELECT
+    u.workspace_id,
+    u.sku_name,
+    u.usage_start_time,
+    u.usage_end_time,
+    CAST(u.usage_date AS TIMESTAMP) AS usage_ts,
+    u.usage_quantity,
+    -- coalesce several tag keys; default to 'unknown' so rows never drop
+    LOWER(TRIM(COALESCE(
+      element_at(u.custom_tags,'APP_NAME'),
+      element_at(u.custom_tags,'MSDB_APP_NAME'),
+      element_at(u.custom_tags,'APP_CODE'),
+      element_at(u.custom_tags,'ENV_NAME'),
+      'unknown'
+    ))) AS app_team
+  FROM system.billing.usage u
+  WHERE (:param_start_date IS NULL OR CAST(u.usage_date AS DATE) >= CAST(:param_start_date AS DATE))
+    AND (:param_end_date   IS NULL OR CAST(u.usage_date AS DATE) <  CAST(:param_end_date   AS DATE))
+),
+
+prices AS (
+  SELECT
+    sku_name,
+    price_start_time,
+    COALESCE(price_end_time, date_add(current_date, 1)) AS price_end_time,
+    COALESCE(pricing['default'], pricing.default)       AS unit_price_usd
+  FROM system.billing.list_prices
+  WHERE currency_code = 'USD'
+),
+
+priced AS (
+  SELECT
+    ub.sku_name,
+    ub.app_team,
+    CASE LOWER(:param_time_key)
+      WHEN 'week'    THEN date_trunc('week',    ub.usage_ts)
+      WHEN 'month'   THEN date_trunc('month',   ub.usage_ts)
+      WHEN 'quarter' THEN date_trunc('quarter', ub.usage_ts)
+      ELSE date_trunc('week', ub.usage_ts)
+    END AS period,
+    COALESCE(ub.usage_quantity, 0) * COALESCE(p.unit_price_usd, 0) AS list_cost_usd
+  FROM usage_base ub
+  LEFT JOIN prices p
+    ON ub.sku_name = p.sku_name
+   -- consider a price valid when windows overlap
+   AND ub.usage_start_time <  p.price_end_time
+   AND ub.usage_end_time   >= p.price_start_time
+),
+
+-- Optional: per-SKU discounts (leave empty, or replace with your table)
+discounts AS (
+  SELECT CAST(NULL AS STRING) AS sku_name, CAST(NULL AS DOUBLE) AS discount_percent WHERE 1=0
+),
+
+finalized AS (
+  SELECT
+    pr.sku_name,
+    pr.app_team,
+    pr.period,
+    pr.list_cost_usd                                         AS cost_usd_before_discount,
+    pr.list_cost_usd * (1 - COALESCE(d.discount_percent,0))  AS cost_usd_after_discount
+  FROM priced pr
+  LEFT JOIN discounts d
+    ON pr.sku_name = d.sku_name
+)
+
+SELECT
+  sku_name,
+  app_team,
+  SUM(cost_usd_after_discount)  AS total_cost_usd,
+  SUM(cost_usd_before_discount) AS list_cost_usd,
+  SUM(cost_usd_before_discount) - SUM(cost_usd_after_discount) AS discount_usd
+FROM finalized
+WHERE (:team_filter IS NULL OR app_team = LOWER(TRIM(:team_filter)))
+  AND (:sku_filter  IS NULL OR sku_name = :sku_filter)   -- exact name if used
+GROUP BY sku_name, app_team
+ORDER BY app_team, total_cost_usd DESC;
