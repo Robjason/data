@@ -1,5 +1,4 @@
--- Per-Team SKU cost using system.billing.usage + list_prices (USD)
--- This version intentionally has NO date filter so you get data right away.
+-- Per-team per-SKU cost (robust: no row drops, optional dates, multi-key tag)
 
 WITH usage_base AS (
   SELECT
@@ -9,21 +8,17 @@ WITH usage_base AS (
     u.usage_end_time,
     CAST(u.usage_date AS TIMESTAMP) AS usage_ts,
     u.usage_quantity,
-    LOWER(TRIM(
-      CASE LOWER(:team_tag_key)
-        WHEN 'app_name'       THEN element_at(u.custom_tags,'APP_NAME')
-        WHEN 'msdb_app_name'  THEN element_at(u.custom_tags,'MSDB_APP_NAME')
-        WHEN 'app_code'       THEN element_at(u.custom_tags,'APP_CODE')
-        WHEN 'env_name'       THEN element_at(u.custom_tags,'ENV_NAME')
-        ELSE COALESCE(
-               element_at(u.custom_tags,'APP_NAME'),
-               element_at(u.custom_tags,'MSDB_APP_NAME'),
-               element_at(u.custom_tags,'APP_CODE'),
-               element_at(u.custom_tags,'ENV_NAME')
-             )
-      END
-    )) AS app_team
+    /* Coalesce several possible team tags; default to 'unknown' so rows stay */
+    LOWER(TRIM(COALESCE(
+      element_at(u.custom_tags,'APP_NAME'),
+      element_at(u.custom_tags,'MSDB_APP_NAME'),
+      element_at(u.custom_tags,'APP_CODE'),
+      element_at(u.custom_tags,'ENV_NAME'),
+      'unknown'
+    ))) AS app_team
   FROM system.billing.usage u
+  WHERE (:param_start_date IS NULL OR CAST(u.usage_date AS DATE) >= CAST(:param_start_date AS DATE))
+    AND (:param_end_date   IS NULL OR CAST(u.usage_date AS DATE) <  CAST(:param_end_date   AS DATE))
 ),
 
 prices AS (
@@ -36,7 +31,6 @@ prices AS (
   WHERE currency_code = 'USD'
 ),
 
--- price window overlaps usage window
 priced AS (
   SELECT
     ub.sku_name,
@@ -51,15 +45,13 @@ priced AS (
   FROM usage_base ub
   LEFT JOIN prices p
     ON ub.sku_name = p.sku_name
+   -- window overlap: keep the row even if price is missing (LEFT JOIN)
    AND ub.usage_start_time <  p.price_end_time
    AND ub.usage_end_time   >= p.price_start_time
 ),
 
--- Optional: per-SKU discounts (empty by default)
-discounts AS (
+discounts AS (   -- keep empty unless you have real rules
   SELECT CAST(NULL AS STRING) AS sku_name, CAST(NULL AS DOUBLE) AS discount_percent WHERE 1=0
-  -- UNION ALL SELECT 'PREMIUM_SQL_PRO_COMPUTE_US_CENTRAL', 0.40
-  -- UNION ALL SELECT 'PREMIUM_ALL_PURPOSE_COMPUTE_(PHOTON)', 0.40
 ),
 
 finalized AS (
@@ -81,9 +73,7 @@ SELECT
   SUM(cost_usd_before_discount) AS list_cost_usd,
   SUM(cost_usd_before_discount) - SUM(cost_usd_after_discount) AS discount_usd
 FROM finalized
-WHERE app_team IS NOT NULL
-  AND (:team_filter IS NULL OR app_team = LOWER(TRIM(:team_filter)))
-  AND (:sku_filter  IS NULL OR sku_name = :sku_filter)   -- exact name
+WHERE (:team_filter IS NULL OR app_team = LOWER(TRIM(:team_filter)))
+  AND (:sku_filter  IS NULL OR sku_name = :sku_filter)
 GROUP BY sku_name, app_team
 ORDER BY app_team, total_cost_usd DESC;
-
