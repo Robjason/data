@@ -1,38 +1,17 @@
--- Do we have usage at all?
+-- A) Do we have usage rows in the window?
 SELECT COUNT(*) AS n_rows
 FROM system.billing.usage
-WHERE usage_start_time >= :param_start_date
-  AND usage_start_time <  :param_end_date;
+WHERE CAST(usage_date AS DATE) >= :param_start_date
+  AND CAST(usage_date AS DATE) <  :param_end_date;
 
--- What tag keys exist? (pick the real app key from here)
+-- B) What tag keys exist on THIS table?
 SELECT k, COUNT(*) AS n
 FROM (
-  SELECT explode(map_keys(tags)) AS k
+  SELECT explode(map_keys(custom_tags)) AS k
   FROM system.billing.usage
-  WHERE usage_start_time >= :param_start_date
-    AND usage_start_time <  :param_end_date
+  WHERE CAST(usage_date AS DATE) >= :param_start_date
+    AND CAST(usage_date AS DATE) <  :param_end_date
 ) t
 GROUP BY k
 ORDER BY n DESC
 LIMIT 50;
-
--- Minimal per-team, per-SKU cost (no pricing table)
-SELECT
-  LOWER(COALESCE(element_at(tags,'app_name'), element_at(tags,'APP_NAME'),
-                 element_at(tags,'application'), element_at(tags,'team'))) AS app_team,
-  sku,
-  DATE_TRUNC('week', usage_start_time) AS period,
-  SUM(cost_usd) AS cost_usd
-FROM system.billing.usage
-WHERE usage_start_time >= :param_start_date
-  AND usage_start_time <  :param_end_date
-GROUP BY 1,2,3
-HAVING app_team IS NOT NULL
-ORDER BY cost_usd DESC
-LIMIT 200;
-
-
-
-
-
-
