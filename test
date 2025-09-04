@@ -1,18 +1,132 @@
--- What catalog/schema am I on?
-SELECT current_catalog() AS catalog, current_schema() AS schema;
+-- ===========================
+-- 1) Normalize usage rows
+-- ===========================
+WITH usage_base AS (
+  SELECT
+    u.workspace_id,
+    u.sku_name,
+    u.usage_start_time,
+    u.usage_end_time,
+    CAST(u.usage_date AS TIMESTAMP)                 AS usage_ts,
+    u.usage_quantity,
+    -- pull team/app tag (keys are case-sensitive; coalesce common variants)
+    LOWER(COALESCE(
+      element_at(u.custom_tags,'app_name'),
+      element_at(u.custom_tags,'APP_NAME'),
+      element_at(u.custom_tags,'application'),
+      element_at(u.custom_tags,'APPLICATION'),
+      element_at(u.custom_tags,'team'),
+      element_at(u.custom_tags,'TEAM')
+    )) AS app_team
+  FROM system.billing.usage u
+  WHERE CAST(u.usage_date AS DATE) >= :param_start_date
+    AND CAST(u.usage_date AS DATE) <  :param_end_date
+),
 
--- Does the table exist?
-SHOW TABLES IN system.billing;
+-- Optional workspace names (only if you later want to filter by workspace)
+workspaces AS (
+  SELECT DISTINCT workspace_id, workspace_name
+  FROM system.access.workspaces_latest
+),
 
--- Any rows at all (no date filter)?
-SELECT COUNT(*) AS n_rows_total
-FROM system.billing.usage;
+-- ===========================
+-- 2) Join list prices (USD)
+-- ===========================
+prices AS (
+  SELECT
+    sku                              AS sku_name,
+    price_start_time,
+    COALESCE(price_end_time, date_add(current_date, 1)) AS price_end_time,
+    -- pricing is a MAP; default price lives at ['default'] in most regions
+    COALESCE(pricing['default'], pricing.default)       AS unit_price_usd
+  FROM system.billing.list_prices
+  WHERE currency_code = 'USD'
+),
 
--- If >0, what’s the date range present?
-SELECT MIN(CAST(usage_date AS DATE)) AS min_d, MAX(CAST(usage_date AS DATE)) AS max_d
-FROM system.billing.usage;
+priced AS (
+  SELECT
+    ub.sku_name,
+    ub.app_team,
+    -- choose period dynamically by param
+    CASE LOWER(:param_time_key)
+      WHEN 'week'    THEN date_trunc('week',    ub.usage_ts)
+      WHEN 'month'   THEN date_trunc('month',   ub.usage_ts)
+      WHEN 'quarter' THEN date_trunc('quarter', ub.usage_ts)
+      ELSE date_trunc('week', ub.usage_ts)
+    END AS period,
+    -- if there is no price row, treat as 0 to avoid NULL math
+    COALESCE(ub.usage_quantity, 0) * COALESCE(p.unit_price_usd, 0) AS list_cost_usd
+  FROM usage_base ub
+  LEFT JOIN prices p
+    ON ub.sku_name = p.sku_name
+   -- join on usage_end_time within price window; use strict end bound
+   AND ub.usage_end_time >= p.price_start_time
+   AND ub.usage_end_time <  p.price_end_time
+),
 
--- Peek a few rows to confirm column names
-SELECT *
+-- ===========================
+-- 3) Optional discounts by SKU
+--     (replace with your real table if you have one)
+-- ===========================
+discounts AS (
+  -- Example stub; keep or swap with finance.sku_discounts
+  SELECT 'PREMIUM_SQL_PRO_COMPUTE_US_CENTRAL' AS sku_name, 0.40 AS discount_percent
+  UNION ALL
+  SELECT 'PREMIUM_ALL_PURPOSE_COMPUTE_(PHOTON)' AS sku_name, 0.40 AS discount_percent
+),
+
+finalized AS (
+  SELECT
+    pr.sku_name,
+    pr.app_team,
+    pr.period,
+    -- apply per-SKU discount if available
+    pr.list_cost_usd * (1 - COALESCE(d.discount_percent, 0)) AS cost_usd_after_discount,
+    pr.list_cost_usd                                         AS cost_usd_before_discount
+  FROM priced pr
+  LEFT JOIN discounts d
+    ON pr.sku_name = d.sku_name
+)
+
+SELECT
+  sku_name,
+  app_team,
+  SUM(cost_usd_after_discount)  AS total_cost_usd,
+  SUM(cost_usd_before_discount) AS list_cost_usd,
+  SUM(cost_usd_before_discount) - SUM(cost_usd_after_discount) AS discount_usd
+FROM finalized
+WHERE app_team IS NOT NULL
+  AND (:app_team_filter IS NULL OR LOWER(app_team) = LOWER(:app_team_filter))
+  AND (:sku_filter IS NULL OR sku_name IN (:sku_filter))
+  AND DATE(period) >= CAST(:param_start_date AS DATE)
+  AND DATE(period) <  CAST(:param_end_date   AS DATE)
+GROUP BY sku_name, app_team
+ORDER BY app_team, total_cost_usd DESC;
+
+
+
+
+
+
+
+-- Exact SKUs present in your window (copy/paste one into :sku_filter)
+SELECT DISTINCT sku_name
 FROM system.billing.usage
-LIMIT 20;
+WHERE CAST(usage_date AS DATE) >= :param_start_date
+  AND CAST(usage_date AS DATE) <  :param_end_date
+ORDER BY 1;
+
+-- Which app/team tag values actually exist?
+SELECT LOWER(COALESCE(
+         element_at(custom_tags,'app_name'),
+         element_at(custom_tags,'APP_NAME'),
+         element_at(custom_tags,'application'),
+         element_at(custom_tags,'team')
+       )) AS app_team,
+       COUNT(*) AS n
+FROM system.billing.usage
+WHERE CAST(usage_date AS DATE) >= :param_start_date
+  AND CAST(usage_date AS DATE) <  :param_end_date
+GROUP BY app_team
+ORDER BY n DESC
+LIMIT 50;
