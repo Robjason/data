@@ -15,7 +15,10 @@ WITH pricing AS (
 se_creator AS (
   SELECT
     user_identity.email AS warehouse_owner,
-    GET_JSON_OBJECT(response_result, '$.id') AS warehouse_id,
+    COALESCE(
+      GET_JSON_OBJECT(to_json(response), '$.result.id'),
+      GET_JSON_OBJECT(to_json(response), '$.id')
+    ) AS warehouse_id,
     COALESCE(element_at(request_params, 'name'), element_at(request_params, 'warehouse_name')) AS warehouse_name
   FROM system.access.audit
   WHERE action_name IN ('createWarehouse','createEndpoint')
