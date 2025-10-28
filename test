@@ -1,38 +1,127 @@
-WITH prices AS (
+-- ====== PARAM HINTS (optional; you can also use the UI parameters) ======
+-- SET param_start_date = '2025-01-01';
+-- SET param_end_date   = '2025-10-28';
+-- SET workspace_id     = 'All';
+-- SET warehouse_id     = 'All';
+-- SET tags             = 'All';
+
+-- ====== 1) PRICING: list price per DBU by SKU over time ======
+WITH pricing AS (
   SELECT
-    sku_name,
-    usage_unit,
-    pricing.default                                 AS unit_price_usd,
-    price_start_time,
-    COALESCE(price_end_time, date_add(current_date, 1)) AS price_end_time
-  FROM system.billing.list_prices
-  WHERE currency_code = 'USD'
+      p.sku_name,
+      p.pricing_effective_list.default            AS price,          -- USD per DBU
+      p.price_start_time,
+      COALESCE(p.price_end_time, NOW())           AS price_end_time,
+      CASE
+        WHEN p.sku_name LIKE '%PRO%'          THEN 'PRO'
+        WHEN p.sku_name LIKE '%SERVERLESS%'   THEN 'SERVERLESS'
+        WHEN p.sku_name LIKE '%PREMIUM_SQL%'  THEN 'CLASSIC'
+        ELSE 'OTHER'
+      END                                         AS warehouse_type
+  FROM system.billing.list_prices p
 ),
 
-usage_priced AS (
+-- ====== 2) Who created the warehouse (owner) & friendly name (best effort) ======
+warehouse_creator AS (
   SELECT
-    u.sku_name,
-    u.custom_tags['DPE_APP_ID']                 AS dpe_id,
-    DATE_TRUNC('MONTH', u.usage_date)           AS usage_month,
-    u.usage_quantity,
-    p.unit_price_usd,
-    -- Cost = usage qty × unit price
-    (u.usage_quantity * p.unit_price_usd)       AS usage_usd
+      user_identity.email                                              AS warehouse_owner,
+      GET_JSON_OBJECT(response_result, '$.id')                         AS warehouse_id,
+      -- name can be in request params depending on API; keep best-effort extraction
+      COALESCE(
+        element_at(request_params, 'name'),
+        GET_JSON_OBJECT(request_params_json, '$.name')
+      )                                                                AS warehouse_name,
+      TRANSFORM(MAP_KEYS(custom_tags), (k, i) -> CONCAT(lower(k), ':', lower(MAP_VALUES(custom_tags)[i])))
+                                                                       AS key_value_tags
+  FROM system.access.audit
+  WHERE action_name IN ('createWarehouse','createEndpoint')
+    AND response_status_code = 200
+),
+
+-- ====== 3) Daily warehouse usage with attached list price ======
+usage_with_pricing AS (
+  SELECT
+      u.workspace_id,
+      u.usage_metadata.warehouse_id                                    AS warehouse_id,
+      COALESCE(c.warehouse_name, u.usage_metadata.name)                AS warehouse_name,
+      p.warehouse_type,
+      u.sku_name,
+      DATE(u.usage_start_time)                                         AS usage_date,
+      p.price                                                          AS price_per_unit,  -- USD / DBU
+      SUM(u.usage_quantity)                                            AS dbus,            -- per day
+      SUM(u.usage_quantity) * p.price                                  AS day_dollars      -- per day
   FROM system.billing.usage u
-  LEFT JOIN prices p
-    ON u.sku_name        = p.sku_name
-   AND u.usage_unit      = p.usage_unit
-   AND u.usage_end_time BETWEEN p.price_start_time AND p.price_end_time
-  WHERE u.custom_tags['DPE_APP_ID'] IS NOT NULL
-    AND u.usage_date >= DATE('2024-06-01')   -- start date
-    AND u.usage_date <= DATE('2025-07-31')   -- end date
+  JOIN pricing p
+    ON  p.sku_name = u.sku_name
+    AND u.usage_start_time BETWEEN p.price_start_time AND p.price_end_time
+  LEFT JOIN warehouse_creator c
+    ON c.warehouse_id = u.usage_metadata.warehouse_id
+  WHERE u.billing_origin_product = 'SQL'                      -- keep: only SQL Warehouses
+    AND u.usage_metadata.warehouse_id IS NOT NULL            -- exclude jobs/clusters
+    AND u.usage_unit = 'DBU'                                 -- billable DBUs
+    AND u.usage_date BETWEEN :param_start_date AND :param_end_date
+    AND (:workspace_id = 'All'  OR u.workspace_id  = :workspace_id)
+    AND (:warehouse_id = 'All' OR u.usage_metadata.warehouse_id = :warehouse_id)
+  GROUP BY
+      u.workspace_id,
+      u.usage_metadata.warehouse_id,
+      COALESCE(c.warehouse_name, u.usage_metadata.name),
+      p.warehouse_type,
+      u.sku_name,
+      DATE(u.usage_start_time),
+      p.price
 )
 
+-- ====== 4) FINAL OUTPUT (PERIOD TOTALS PER WAREHOUSE) ======
 SELECT
-  dpe_id,
-  sku_name,
-  usage_month,
-  ROUND(SUM(usage_usd), 2) AS total_spend_usd
-FROM usage_priced
-GROUP BY dpe_id, sku_name, usage_month
-ORDER BY total_spend_usd DESC;
+    u.workspace_id,
+    u.warehouse_id,
+    MAX(u.warehouse_name)                     AS warehouse_name,
+    MAX(u.warehouse_type)                     AS warehouse_type,
+    MAX(u.sku_name)                           AS sku_name,
+    SUM(u.dbus)                               AS total_dbus,      -- in the selected date range
+    SUM(u.day_dollars)                        AS spend_usd,       -- in the selected date range
+    c.warehouse_owner
+FROM usage_with_pricing u
+LEFT JOIN warehouse_creator c
+  ON c.warehouse_id = u.warehouse_id
+WHERE
+    (:tags = 'All'
+      OR EXISTS (
+          SELECT 1
+          FROM UNNEST(c.key_value_tags) t
+          WHERE t = lower(:tags)            -- simple single-tag match
+      )
+    )
+GROUP BY
+    u.workspace_id, u.warehouse_id, c.warehouse_owner
+ORDER BY
+    spend_usd DESC;
+
+-- ====== OPTIONAL: MONTHLY BREAKDOWN INSTEAD OF TOTALS ======
+-- Uncomment below and comment out the SELECT above if you want per-month:
+-- SELECT
+--     date_trunc('month', u.usage_date)       AS month,
+--     u.workspace_id,
+--     u.warehouse_id,
+--     MAX(u.warehouse_name)                   AS warehouse_name,
+--     MAX(u.warehouse_type)                   AS warehouse_type,
+--     MAX(u.sku_name)                         AS sku_name,
+--     SUM(u.dbus)                             AS dbus,
+--     SUM(u.day_dollars)                      AS spend_usd,
+--     c.warehouse_owner
+-- FROM usage_with_pricing u
+-- LEFT JOIN warehouse_creator c
+--   ON c.warehouse_id = u.warehouse_id
+-- WHERE
+--     (:tags = 'All'
+--       OR EXISTS (
+--           SELECT 1
+--           FROM UNNEST(c.key_value_tags) t
+--           WHERE t = lower(:tags)
+--       )
+--     )
+-- GROUP BY
+--     date_trunc('month', u.usage_date),
+--     u.workspace_id, u.warehouse_id, c.warehouse_owner
+-- ORDER BY month, spend_usd DESC;
