@@ -1,1 +1,81 @@
+-- ========= PARAMETERS: set your reporting window =========
+WITH params AS (
+  SELECT
+    TIMESTAMP('2025-01-01') AS start_ts,
+    TIMESTAMP('2025-12-31') AS end_ts
+),
+
+-- 1) Usage rows that already have the warehouse_id tag
+u_wh AS (
+  SELECT
+    CAST(u.usage_start_time AS DATE)                            AS usage_date,
+    element_at(u.custom_tags, 'warehouse_id')                   AS warehouse_id,
+    u.account_id,
+    u.sku_name,
+    u.cloud,
+    u.currency_code,
+    u.usage_unit,
+    u.usage_quantity
+  FROM system.billing.usage u, params p
+  WHERE u.usage_start_time >= p.start_ts
+    AND u.usage_start_time <  p.end_ts
+    AND element_at(u.custom_tags, 'warehouse_id') IS NOT NULL
+),
+
+-- 2) Time-effective unit prices (USD)
+price_win AS (
+  SELECT
+    account_id,
+    sku_name,
+    cloud,
+    currency_code,
+    usage_unit,
+    COALESCE(pricing.effective_list, pricing.default)           AS unit_price,
+    price_start_time,
+    COALESCE(price_end_time, TIMESTAMP('2999-12-31'))           AS price_end_time
+  FROM system.billing.list_prices
+  WHERE currency_code = 'USD'
+),
+
+-- 3) usage * price, respecting price windows
+u_priced AS (
+  SELECT
+    u.warehouse_id,
+    date_trunc('month', u.usage_date)                           AS month_ts,
+    SUM(u.usage_quantity * p.unit_price)                        AS cost_usd
+  FROM u_wh u
+  JOIN price_win p
+    ON p.account_id    = u.account_id
+   AND p.sku_name      = u.sku_name
+   AND p.cloud         = u.cloud
+   AND p.currency_code = u.currency_code
+   AND p.usage_unit    = u.usage_unit
+   AND TIMESTAMP(u.usage_date) >= p.price_start_time
+   AND TIMESTAMP(u.usage_date) <  p.price_end_time
+  GROUP BY u.warehouse_id, date_trunc('month', u.usage_date)
+),
+
+-- 4) Latest warehouse attributes for display
+wh_latest AS (
+  SELECT warehouse_id, warehouse_name, warehouse_size, workspace_id
+  FROM (
+    SELECT
+      w.*,
+      ROW_NUMBER() OVER (PARTITION BY w.warehouse_id ORDER BY w.change_time DESC NULLS LAST) rn
+    FROM system.compute.warehouses w
+  ) s WHERE rn = 1
+)
+
+-- 5) Final: monthly USD cost per warehouse
+SELECT
+  date_format(up.month_ts, 'yyyy-MM')                           AS bill_month,
+  up.warehouse_id,
+  wl.warehouse_name,
+  wl.warehouse_size,
+  wl.workspace_id,
+  ROUND(up.cost_usd, 2)                                         AS cost_usd
+FROM u_priced up
+LEFT JOIN wh_latest wl
+  ON wl.warehouse_id = up.warehouse_id
+ORDER BY bill_month DESC, cost_usd DESC, up.warehouse_id;
 
