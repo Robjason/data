@@ -1,1 +1,153 @@
+Azure Databricks Delta Sharing
+ Roles and Responsibilities and Shared Responsibility Model
+ Unity Catalog based Delta Sharing
+Objective
+ This document defines clear ownership for all activities required to enable, govern, and operate Delta Sharing using Unity Catalog in Azure Databricks. It establishes which team is responsible for account level configuration, metastore governance, security and compliance controls, network readiness, share and recipient administration, automation ownership, and ongoing operational support. The document is written from the Azure perspective only.
+Scope
+ This applies to Delta Sharing implementations where Unity Catalog is used to publish shares from provider teams and allow recipient workspaces to consume shared tables or views through a catalog created from the share. The operating model assumes L1 scripts are the standard mechanism for executing repeatable Delta Sharing operations. Azure Platform Engineering owns the L1 framework and scripts. Application teams run approved L1 scripts for share and asset operations. Data Platform executes metastore governed operations such as recipient creation and share recipient attachment using L1 scripts.
+Roles included
+ Databricks Account Admin
+ Metastore Admin
+ Azure Platform Engineering team
+ Data Platform team
+ Network team
+ Security and Compliance
+ Application team Provider side
+ Application team Recipient side
+ Service principals used for L1 scripts and privileged operations
+Shared responsibility model overview
+ Delta Sharing in Azure requires shared ownership across teams. Account and metastore administrators provide the platform and governance foundations. Azure Platform Engineering builds and maintains the L1 automation framework. Data Platform operates the metastore governed steps through L1 scripts. Application teams own the data product and execute approved L1 scripts to create shares and attach assets. Network and Security teams provide connectivity and policy oversight where required.
+Operating rules and governance statements
+ Azure Platform Engineering owns and maintains the L1 scripts and automation framework used for Delta Sharing operations.
+ Application teams are permitted to execute approved L1 scripts to create shares and attach assets to shares, using approved service principals.
+ Data Platform team is responsible for recipient creation and recipient to share attachment using L1 scripts, since these are metastore governed actions.
+ Recipient creation is a metastore governance activity and is treated as a one time operation per recipient workspace or identity per metastore.
+ Recipient objects must be reused and duplicate recipient creation is not permitted.
+ Metastore level privileged grants are owned and controlled by the Metastore Admin.
+ Account level enablement and account wide settings are owned and controlled by the Databricks Account Admin.
+ Catalog creation from an incoming share on the recipient side is a privileged operation and is performed by Data Platform or Metastore Admin using approved service principals and L1 scripts.
+ All actions must be auditable and aligned to approved access requests.
+Responsibility areas and ownership
+ This section is the core of the document and should be used as the primary reference.
+Databricks Account Admin responsibilities
+ Enable Delta Sharing capability at the account level.
+ Ensure Unity Catalog metastores are configured and workspaces are attached as per the platform model.
 
+
+Metastore Admin responsibilities
+ Grant and revoke metastore scope privileges required for Delta Sharing operations including create share create recipient use provider and create catalog.
+ Define and enforce naming standards for recipient share and catalog objects.
+ Approve the operational model for Data Platform execution of metastore governed steps through L1 scripts.
+
+
+Azure Platform Engineering team responsibilities
+ Design, build, and maintain the L1 scripts and automation framework used for Delta Sharing.
+ Support Data Platform and application teams when script defects or enhancements are required.
+
+
+Data Platform team responsibilities
+ Execute metastore governed operations using L1 scripts, including recipient creation and attaching recipients to shares.
+ Maintain the authoritative registry of recipients and enforce recipient reuse.
+ Perform privileged recipient side operations in Azure including creating catalogs from shares when required by governance.
+ Perform first level support for metastore governed permission issues and coordinate with Metastore Admin for escalations
+
+
+
+Application team Provider side responsibilities
+Raise a firewall request to the network team if its not opened prior
+ Own the dataset being shared including correctness, quality, and expected schema behavior.
+ Obtain business and compliance approvals required to share data.
+ Define what tables or views are shared and ensure the share contents align to approved scope.
+ Create shares and attach approved assets using the approved L1 scripts provided by Azure Platform Engineering.
+Raise a firewall request to the network team if its not opened prior.
+
+6. Network team responsibilities
+ Validate and implement network connectivity requirements required for Delta Sharing flows as per approved architecture of the app team.
+ Open required network paths and confirm reachability based on security approvals of  the app team.
+ Provide validation evidence that connectivity is in place and stable between both the provider and recipient workspaces.
+ Support incident troubleshooting when connectivity restrictions or routing issues impact sharing.
+
+
+7. Application team Recipient side responsibilities
+ Obtain approvals required to consume shared data in Azure.
+ Consume the shared data through the approved catalog and access model.
+ Request access for users or service principals through approved channels.
+
+
+Provider workflow in Azure with responsibility by step
+ This section describes what must happen in Azure when publishing a share and who owns each step.
+Step 1 Approval and scope confirmation
+ Responsible Application team Provider side and arb approval 
+Step 2 Enable Delta Sharing on metastore
+ Responsible Databricks Account Admin
+Step 3 Network and storage access readiness if required
+ Responsible Network team and request should be created by app teams.
+Step 4 Grant CREATE SHARE to provider application service principal used by L1 scripts
+ Responsible Metastore Admin
+Step 5 Create share using L1 scripts
+ Responsible Application team Provider side
+Step 6 Attach tables or views to the share using L1 scripts
+ Responsible Application team Provider side
+Step 7 Create recipient if required and reuse if it already exists
+ Responsible Data Platform team
+ Accountable Metastore Admin
+Step 8 Attach recipient to share and grant recipient access to the share
+ Responsible Data Platform team
+ Accountable Metastore Admin
+Step 9 Ongoing share content changes using L1 scripts
+ Responsible Application team Provider side
+ Recipient additions and access changes are executed by Data Platform through L1 scripts.
+Recipient workflow in Azure with responsibility by step
+ This section describes what must happen in Azure when consuming a share and who owns each step.
+Step 1 Approval confirmation for consumption
+ Responsible Application team Recipient side and arb approval
+Step 2 Confirm recipient workspace is attached to correct metastore
+ Responsible Databricks Account Admin and Metastore Admin
+Step 3 Register the provider in Azure metastore if required and confirm share visibility
+ Responsible Data Platform team
+ Accountable Metastore Admin
+Step 4 Grant USE PROVIDER and CREATE CATALOG to recipient privileged service principal
+ Responsible Metastore Admin
+Step 5 Create catalog from the incoming share using L1 scripts and approved service principal
+ Responsible Data Platform team
+ Accountable Metastore Admin
+Step 6 Apply catalog, schema, and table permissions for recipient users, groups, or service principals
+ Responsible Data Platform team
+ Accountable Metastore Admin or delegated catalog owner based on governance
+Step 7 Validate consumption in Azure
+ Responsible Data Platform team
+Step 8 Ongoing access changes and operational support
+ Access changes are executed by Data Platform using L1 scripts under the governance model.
+ Recipient application team is responsible for downstream integration and schema change impact handling.
+Privileged operations ownership and control
+ Recipient creation
+ Executed by Data Platform using L1 scripts, governed and approved by Metastore Admin. One time per recipient workspace or identity. Recipients must be reused.
+Attach recipient to share and grant recipient access
+ Executed by Data Platform using L1 scripts, governed and approved by Metastore Admin.
+Create share privilege assignment
+ Owned by Metastore Admin. Granted only to approved provider identities for use via L1 scripts.
+Create recipient privilege assignment
+ Owned by Metastore Admin. Not delegated except by explicit approval.
+Use provider and create catalog privilege assignment
+ Owned by Metastore Admin. Granted only to approved privileged service principals.
+Create catalog from share
+ Executed by Data Platform using L1 scripts under metastore governance.
+
+Operational support and triage
+ Data Platform performs first level triage and gathers evidence.
+ Metastore Admin resolves governance decisions and escalations related to privileged grants and UC ownership boundaries.
+ Azure Platform Engineering supports issues related to L1 script defects, enhancements, and framework stability.
+ Network team resolves connectivity issues.
+ Provider team resolves data availability, data correctness, and schema related issues.
+ Recipient team resolves consumption logic and downstream integration issues.
+Automation boundaries
+ Azure Platform Engineering owns the L1 scripts and automation framework and controls changes through versioning and release processes.
+ Application teams may execute L1 scripts for share creation and asset attachment where permitted.
+ Data Platform executes L1 scripts for metastore governed actions including recipient creation, attaching recipients to shares, provider registration, catalog creation, and permission application.
+ All script executions must log actions and retain run evidence for audit.
+Summary:
+ Databricks Account Admin owns account level enablement, metastore attachment patterns, and audit logging delivery.
+ Metastore Admin owns Unity Catalog governance and privileged grant control.
+ Azure Platform Engineering owns the L1 automation framework and scripts lifecycle.
+ Data Platform executes metastore governed operations through L1 scripts and owns operational support for those actions.
+ Application teams own approvals, data quality, share scope, change communication, and consumption.
