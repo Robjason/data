@@ -1,1 +1,157 @@
+-- Calculate total discounted spend per month
+-- Grouped by DPE ID and SKU name
+-- Old discounts valid through 2026-01-24
+-- New discounts valid from 2026-01-25 onward
 
+WITH prices AS (
+    SELECT
+        COALESCE(price_end_time, date_add(current_date, 1)) AS coalesced_price_end_time,
+        *
+    FROM system.billing.list_prices
+    WHERE currency_code = 'USD'
+),
+
+discounts AS (
+
+    -- =========================
+    -- OLD DISCOUNTS (through 2026-01-24)
+    -- =========================
+    SELECT 'ENTERPRISE_ALL_PURPOSE_COMPUTE' AS sku_name, 0.40 AS discount_percent,
+           DATE '1900-01-01' AS discount_start_date, DATE '2026-01-24' AS discount_end_date
+    UNION ALL
+    SELECT 'ENTERPRISE_ALL_PURPOSE_COMPUTE_(PHOTON)', 0.40,
+           DATE '1900-01-01', DATE '2026-01-24'
+    UNION ALL
+    SELECT 'ENTERPRISE_DLT_ADVANCED_COMPUTE', 0.37,
+           DATE '1900-01-01', DATE '2026-01-24'
+    UNION ALL
+    SELECT 'ENTERPRISE_DLT_ADVANCED_COMPUTE_(PHOTON)', 0.37,
+           DATE '1900-01-01', DATE '2026-01-24'
+    UNION ALL
+    SELECT 'ENTERPRISE_DLT_CORE_COMPUTE', 0.37,
+           DATE '1900-01-01', DATE '2026-01-24'
+    UNION ALL
+    SELECT 'ENTERPRISE_JOBS_COMPUTE', 0.55,
+           DATE '1900-01-01', DATE '2026-01-24'
+    UNION ALL
+    SELECT 'ENTERPRISE_JOBS_COMPUTE_(PHOTON)', 0.55,
+           DATE '1900-01-01', DATE '2026-01-24'
+    UNION ALL
+    SELECT 'ENTERPRISE_SQL_COMPUTE', 0.36,
+           DATE '1900-01-01', DATE '2026-01-24'
+    UNION ALL
+    SELECT 'ENTERPRISE_SQL_PRO_COMPUTE_US_EAST_N_VIRGINIA', 0.36,
+           DATE '1900-01-01', DATE '2026-01-24'
+    UNION ALL
+    SELECT 'ENTERPRISE_SQL_PRO_COMPUTE_US_EAST_OHIO', 0.36,
+           DATE '1900-01-01', DATE '2026-01-24'
+
+    -- =========================
+    -- NEW DISCOUNTS (from 2026-01-25)
+    -- =========================
+    UNION ALL
+    SELECT 'ENTERPRISE_ALL_PURPOSE_COMPUTE', 0.40,
+           DATE '2026-01-25', DATE '9999-12-31'
+    UNION ALL
+    SELECT 'ENTERPRISE_ALL_PURPOSE_COMPUTE_(PHOTON)', 0.40,
+           DATE '2026-01-25', DATE '9999-12-31'
+    UNION ALL
+    SELECT 'ENTERPRISE_JOBS_COMPUTE', 0.55,
+           DATE '2026-01-25', DATE '9999-12-31'
+    UNION ALL
+    SELECT 'ENTERPRISE_JOBS_COMPUTE_(PHOTON)', 0.55,
+           DATE '2026-01-25', DATE '9999-12-31'
+    UNION ALL
+    SELECT 'ENTERPRISE_DLT_CORE_COMPUTE', 0.40,
+           DATE '2026-01-25', DATE '9999-12-31'
+    UNION ALL
+    SELECT 'ENTERPRISE_DLT_PRO_COMPUTE', 0.40,
+           DATE '2026-01-25', DATE '9999-12-31'
+    UNION ALL
+    SELECT 'ENTERPRISE_DLT_ADVANCED_COMPUTE', 0.40,
+           DATE '2026-01-25', DATE '9999-12-31'
+    UNION ALL
+    SELECT 'ENTERPRISE_DLT_CORE_COMPUTE_(PHOTON)', 0.40,
+           DATE '2026-01-25', DATE '9999-12-31'
+    UNION ALL
+    SELECT 'ENTERPRISE_DLT_PRO_COMPUTE_(PHOTON)', 0.40,
+           DATE '2026-01-25', DATE '9999-12-31'
+    UNION ALL
+    SELECT 'ENTERPRISE_DLT_ADVANCED_COMPUTE_(PHOTON)', 0.40,
+           DATE '2026-01-25', DATE '9999-12-31'
+    UNION ALL
+    SELECT 'ENTERPRISE_SERVERLESS_SQL_COMPUTE', 0.40,
+           DATE '2026-01-25', DATE '9999-12-31'
+    UNION ALL
+    SELECT 'ENTERPRISE_SQL_COMPUTE', 0.40,
+           DATE '2026-01-25', DATE '9999-12-31'
+    UNION ALL
+    SELECT 'ENTERPRISE_SQL_PRO_COMPUTE_US_EAST_N_VIRGINIA', 0.40,
+           DATE '2026-01-25', DATE '9999-12-31'
+    UNION ALL
+    SELECT 'ENTERPRISE_SERVERLESS_REAL_TIME_INFERENCE_LAUNCH_US_EAST_N_VIRGINIA', 0.25,
+           DATE '2026-01-25', DATE '9999-12-31'
+    UNION ALL
+    SELECT 'ENTERPRISE_JOBS_SERVERLESS_COMPUTE_US_EAST_N_VIRGINIA', 0.40,
+           DATE '2026-01-25', DATE '9999-12-31'
+    UNION ALL
+    SELECT 'ENTERPRISE_ALL_PURPOSE_SERVERLESS_COMPUTE_US_EAST_N_VIRGINIA', 0.40,
+           DATE '2026-01-25', DATE '9999-12-31'
+),
+
+usage_with_price AS (
+    SELECT
+        u.sku_name,
+        u.custom_tags['DPE_APP_ID'] AS dpe_id,
+        u.custom_tags['APP_ENV_NAME'] AS env,
+        u.workspace_id,
+        DATE_TRUNC('MONTH', u.usage_start_time) AS usage_month,
+        (
+            u.usage_quantity
+            * p.pricing.effective_list.default
+            * (1 - COALESCE(d.discount_percent, 0))
+        ) AS discounted_spend_usd
+    FROM system.billing.usage AS u
+    LEFT JOIN prices p
+        ON u.sku_name = p.sku_name
+       AND u.usage_unit = p.usage_unit
+       AND u.usage_end_time BETWEEN p.price_start_time AND p.coalesced_price_end_time
+    LEFT JOIN discounts d
+        ON u.sku_name = d.sku_name
+       AND DATE(u.usage_start_time) BETWEEN d.discount_start_date AND d.discount_end_date
+    WHERE DATE(u.usage_start_time) BETWEEN CAST(:param_start_date AS DATE)
+                                       AND CAST(:param_end_date AS DATE)
+      AND u.custom_tags['DPE_APP_ID'] IS NOT NULL
+)
+
+SELECT
+    MD5(CONCAT(
+        COALESCE(inv.`Equivalent SAID`, ''),
+        COALESCE(inv.`Application CODE`, ''),
+        COALESCE(u.env, ''),
+        COALESCE(u.workspace_id, ''),
+        COALESCE(CAST(u.usage_month AS STRING), '')
+    )) AS pk,
+    ROUND(SUM(discounted_spend_usd), 2) AS databricks_cost,
+    DATE_FORMAT(u.usage_month, 'yyyyMM') AS yearmonth,
+    inv.`Equivalent SAID` AS said,
+    inv.`Application CODE` AS app_code,
+    u.env AS environment,
+    w.workspace_name
+FROM usage_with_price u
+LEFT JOIN dpe0648_dev_demo.dkp_dev_schema.dpe_app_inventory inv
+    ON TRIM(u.dpe_id) = TRIM(inv.Title)
+LEFT JOIN system.access.workspaces_latest w
+    ON u.workspace_id = w.workspace_id
+GROUP BY
+    inv.`Equivalent SAID`,
+    inv.`Application CODE`,
+    u.usage_month,
+    u.env,
+    u.workspace_id,
+    w.workspace_name
+ORDER BY
+    inv.`Equivalent SAID`,
+    inv.`Application CODE`,
+    u.usage_month,
+    u.env;
