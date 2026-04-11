@@ -1,38 +1,19 @@
-Slide 1 – FinOps Requirements: High Priority
-
-Focus: immediate cost reduction and highest-value optimization opportunities
-
-Analyze top 5 current spenders across the platform over the last 3 months
-Foreign Exchange Data Lakehouse
-Securities Lending Operational Data
-FX Regulatory Reporting
-Client 360 Enterprise Data Lake
-AML Monitoring Platform
-Market and Reference Data
-Cluster and warehouse resizing
-Replace SQL Pro
-SQL improvement and query optimization
-Optimize 5–10 SQL statements per month
-Serverless enablement
-Optimize the most expensive clusters
-Identify longest-running and most expensive queries
-Optimize instance type for compute
-Downstream AWS infrastructure optimization
-AWS instance sizing
-Storage management
-Enable Photon Engine and define governance / use cases for where it should be applied
-Ensure tracking of work completed and cost optimization delivered
-Slide 2 – FinOps Requirements: Medium Priority / Supporting Initiatives
-
-Focus: governance, best practices, and continuous optimization framework
-
-Data sharing optimization
-Databricks account team guidance / best practices for app team optimization levers
-Build a decision tree / framework for cost optimization for inclusion in the architecture guide
-Onboarding documentation
-Training for new applications
-Governance guidance
-Optimize non-production environments when cost exceeds 25% of total platform cost
-Leverage Adaptive Query Execution (AQE)
-Right-size clusters and use autoscaling for node count optimization
-Use Spot instances for non-production workloads
+Slide 1 – DMC Requirements: Priority 1
+Databricks authentication login correction from EID to email ID
+Automatic email notifications for expiring personal access tokens
+OAuth token federation
+SFTP connector
+Databricks SQL alerts
+Trigger jobs when source tables are updated
+Slide 2 – DMC Requirements: Priority 2
+Attribute-Based Access Control (ABAC)
+Access recertification for Service Principals
+Data classification
+SharePoint connector
+GitHub connectivity
+Alert enablement
+Data as a service
+Data quality monitoring at scale with Agentic AI
+Connect Genie spaces to Microsoft Copilot Studio
+Dashboard and Genie spaces tagging
+Database Lakebase
