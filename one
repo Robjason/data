@@ -1,45 +1,40 @@
-DKP – Milestone Points
+DKP
+
 AWS Federated Databricks setup
-Azure Databricks serverless enablement
-Serverless network policy updates
-Secure package installation through internal repository for serverless workloads
-Serverless governance, controls, and approved outbound access model
-Cross-cloud Databricks platform alignment between Azure and AWS
-Support for secure and reusable serverless enablement patterns
-AWS Central – Milestone Points
-Serverless enablement and expansion on AWS Databricks
-Cross-cloud Delta Sharing support between AWS and Azure
-DR and HA support across AWS teams
+Support for all Databricks accounts
+Unified Databricks billing and usage dashboard for centralized cost monitoring across all accounts
+Cross-cloud Delta Sharing between Azure and AWS
+Azure Databricks serverless enablement with proper tagging and governance
+Serverless network policy implementation and enhancements
+Collaboration with GL team to support requirements such as Serverless, Delta Sharing, and Genie
+
+AWS Central
+
+AWS Databricks serverless enablement and expansion
+Cross-cloud Delta Sharing between AWS and Azure
+DR and HA support for AWS platform teams
 Managed File Events enablement
-Integrated Databricks billing / usage dashboard and cost monitoring
 PrivateLink implementation
-Authentication and OAuth-related improvements
-Trigger-based job automation and alerting
-Lakehouse connections and connector enablement
-AI / Genie / advanced Databricks feature enablement
-SSGA – Milestone Points
-PrivateLink implementation for SSGA environment
-Serverless compute enablement via CICD
-Serverless tagging
-Federated data sharing / replication
+Authentication and OAuth enhancements
+Trigger-based job orchestration and alerting
+Lakehouse connectivity and connector enablement
+AI, Genie, and advanced Databricks capability enablement
+
+SSIM
+
+PrivateLink implementation for the SSGA environment
+Serverless compute enablement through CI/CD
+Serverless tagging enablement
+Federated data sharing and replication support
 DR and HA support
-DLT feature enablement
+DLT enablement
 Oracle connector certificate support
-Observability improvements
-Genie / AI and embedding feature enablement
-Shared implementation and collaboration with DKP / DPE
-DMC – Milestone Points
-Authentication login correction from EID to email ID
-Token expiry notification support
-OAuth token federation
-SFTP and SharePoint connector enablement
-SQL alerts and broader alert enablement
-Trigger jobs when source tables are updated
-Access and governance improvements such as ABAC and service principal recertification
-GitHub connectivity
-Data as a service enablement
-Dashboard / Genie / Copilot-related feature requests
-FinOps – Milestone Points
+Observability enhancements
+Genie, AI, and embedding feature enablement
+Shared implementation and collaboration with DKP and DPE
+
+FINOPS
+
 Analysis of top Databricks spenders across the platform
 Cluster and warehouse rightsizing
 SQL optimization and expensive query reduction
@@ -47,6 +42,19 @@ Serverless optimization opportunities
 AWS infrastructure sizing and storage optimization
 Photon enablement and usage governance
 Cost optimization framework and best practices
-Optimization of expensive clusters and non-prod environments
-Spot instance usage for non-prod workloads
+Optimization of high-cost clusters and non-production environments
+Spot instance adoption for non-production workloads
 Tracking delivered savings and optimization outcomes
+
+DMC
+
+Authentication login migration from EID to email ID
+Token expiry notification support
+OAuth token federation
+SFTP and SharePoint connector enablement
+SQL alerts and broader alerting capabilities
+Trigger-based job execution on source table updates
+Access and governance enhancements, including ABAC and service principal recertification
+GitHub connectivity enablement
+Data-as-a-Service enablement
+Dashboard, Genie, and Copilot feature enablement
