@@ -1,1 +1,346 @@
+Databricks Cross-Team Requirement Notes
+DKP
 
+AWS Federated Databricks setup
+• Establishing the AWS federated Databricks platform model and onboarding pattern.
+
+Azure Databricks serverless enablement
+• Enabling serverless capability on the Azure Databricks side.
+
+Serverless network policy updates
+• Updating network rules and controls required for secure serverless usage.
+
+Secure package installation for serverless workloads
+• Allowing packages through approved internal repositories instead of public internet sources.
+
+Approved outbound access model for serverless
+• Defining what destinations serverless workloads can access.
+
+Serverless governance and control framework
+• Putting standards, controls, and guardrails around serverless usage.
+
+Cross-cloud Databricks platform alignment
+• Aligning Azure and AWS Databricks patterns and standards.
+
+Serverless connectivity and dependency support
+• Ensuring serverless workloads can reach required internal and external dependencies.
+
+Internal repository integration for package management
+• Integrating internal artifact/package repositories for secure dependency management.
+
+AWS Central
+
+Automatic email notifications for expiring personal access tokens
+• Alerting users before tokens expire.
+
+Attribute-Based Access Control (ABAC)
+• Fine-grained access control using user and data attributes.
+
+Databricks Genie enablement
+• Enabling natural language and AI-driven interaction features in Databricks.
+
+Serverless enablement
+• Rolling out serverless compute on AWS Databricks.
+
+Delta Sharing (AWS–Azure)
+• Supporting secure data sharing between AWS and Azure Databricks.
+
+DR and HA support
+• Supporting disaster recovery and high availability patterns.
+
+Managed File Events
+• Triggering workflows based on file arrival or file events.
+
+Integrated cost monitoring and per-app annual budgets
+• Centralized cost visibility and budget tracking.
+
+Databricks authentication login correction from EID to email ID
+• Aligning login identity format.
+
+OAuth token federation
+• Supporting federated token-based authentication.
+
+Trigger jobs when source tables are updated
+• Running jobs automatically when source tables change.
+
+SharePoint connector
+• Integrating Databricks with SharePoint sources.
+
+PrivateLink implementation
+• Enabling private networking for Databricks-related access.
+
+Databricks Apps enablement
+• Enabling Databricks Apps capability where supported.
+
+Databricks SQL alerts
+• Alerting based on SQL or dashboard conditions.
+
+Alert enablement
+• General operational alerting support.
+
+Lakeflow support
+• Supporting Lakeflow-based engineering workflows.
+
+Databricks Zerobus feature
+• Enabling Zerobus-related feature capability.
+
+Apache Iceberg REST-compliant catalog setup on top of Unity Catalog
+• Supporting Iceberg catalog access in a standards-based way.
+
+Lakehouse Connections in CICD
+• Supporting external connections through CICD pipelines.
+
+Enable Genie through pipeline
+• Managing Genie enablement through deployment pipelines.
+
+Access recertification for service principals
+• Periodic review and validation of service principal access.
+
+Databricks secrets vault
+• Defining a secure secret-management approach.
+
+Data classification
+• Applying governance and sensitivity classification to data.
+
+SFTP connector
+• Supporting secure file transfer integration.
+
+GitHub connectivity
+• Enabling notebook and code source control through GitHub.
+
+Data as a service
+• Enabling reusable shared data products for consumers.
+
+Data lifecycle management – hot/cold storage, archival, deletion
+• Defining how data is retained, archived, and deleted.
+
+Data quality monitoring at scale with Agentic AI
+• Using AI-assisted methods to monitor data quality at scale.
+
+Connect Genie spaces to Microsoft Copilot Studio
+• Integrating Genie capabilities with Microsoft Copilot Studio.
+
+Dashboard and Genie spaces tagging
+• Tagging assets for governance and management.
+
+Agentic computing and MCP service enablement in Databricks
+• Supporting advanced agent-based AI and MCP capabilities.
+
+Database Lakebase
+• Exploring or enabling Lakebase-related database capability.
+
+New feature for support procedure
+• Improving platform support procedures.
+
+Enabling Personal Access Tokens
+• Supporting PAT-related platform requests.
+
+Managed group/service principal for Databricks pool access control
+• Managing pool access using groups or service principals.
+
+Read-only access to all workspaces
+• Providing visibility across workspaces for support and governance.
+
+Install R library on Databricks cluster
+• Supporting workloads that require R libraries.
+
+Enable Databricks Usage Dashboard
+• Providing Databricks usage visibility.
+
+Promote app config values from DEV to UAT to PROD
+• Supporting config promotion across environments.
+
+Support Databricks external location with path pattern without region
+• Enhancing external location support for specific path patterns.
+
+Enhance user details screen for AWS Transfer Family server
+• Improving AWS Transfer Family-related visibility or function.
+
+Databricks standardized auto-stop / shut down implementation
+• Standardizing auto-stop patterns to reduce waste.
+
+Request to enable Marketplace feature for IDU
+• Enabling Databricks Marketplace for a specific use case.
+
+Request to support Databricks connection type: Snowflake
+• Supporting Snowflake connectivity within Databricks.
+
+Cost Analysis: Enable Databricks Bundle feature
+• Supporting bundle feature for cost or deployment use cases.
+
+Databricks Model Serving Endpoint
+• Supporting model serving for ML and AI use cases.
+
+Integration between AWS Central Databricks and GCS JupiterOne
+• Integrating Databricks with JupiterOne for visibility and governance.
+
+Enable file event in external location
+• Supporting event-driven workflows on external storage locations.
+
+Databricks to Snowflake data sharing
+• Supporting data sharing between Databricks and Snowflake.
+
+Dedicated VPC for Databricks
+• Creating a dedicated VPC for Databricks isolation and control.
+
+SSGA
+
+PrivateLink
+• Private network connectivity for the SSGA Databricks environment.
+
+Serverless compute enabled via CICD
+• Enabling and managing serverless through CICD processes.
+
+Serverless tagging
+• Applying governance and cost tags to serverless resources.
+
+Genie / AI features enablement
+• Enabling AI-driven Databricks features.
+
+Embedding feature enablement
+• Supporting embedding-related AI capabilities.
+
+Federated data sharing / replication
+• Secure data sharing and replication across environments.
+
+DLT feature
+• Supporting Delta Live Tables capability.
+
+Oracle connector certificate
+• Supporting certificate requirements for Oracle connectivity.
+
+Observability
+• Improving monitoring, logging, and platform visibility.
+
+Feature enhancement collaboration with DKP and DPE
+• Joint work on platform improvements requiring coordination.
+
+Shared implementation support
+• Supporting environment-specific implementation work.
+
+Apache Iceberg REST-compliant catalog setup dependency
+• SSGA PrivateLink is needed to support this capability.
+
+Lakehouse Connections in CICD dependency
+• SSGA PrivateLink is needed to support this capability.
+
+Managed File Events
+• Supporting file-based event-driven processing.
+
+Data sharing pipeline support
+• Supporting data sharing workflows and pipelines.
+
+Enable Genie through pipeline
+• Supporting pipeline-based Genie enablement.
+
+DMC
+
+Automatic email notifications for expiring personal access tokens
+• Alerting users before token expiry.
+
+Attribute-Based Access Control (ABAC)
+• Fine-grained access control based on attributes.
+
+Access recertification for service principals
+• Periodic review of service principal access.
+
+Databricks authentication login correction from EID to email ID
+• Correcting login format to email-based access.
+
+OAuth token federation
+• Supporting federated token-based authentication.
+
+Data classification
+• Applying governance classification to data.
+
+SharePoint connector
+• Connecting Databricks to SharePoint sources.
+
+SFTP connector
+• Supporting secure file transfer connectivity.
+
+GitHub connectivity
+• Enabling GitHub integration for source control.
+
+Databricks SQL alerts
+• Alerting based on SQL conditions.
+
+Trigger jobs when source tables are updated
+• Event-driven job execution on source data change.
+
+Alert enablement
+• Broader operational alerting support.
+
+Data as a service
+• Enabling reusable shared data delivery.
+
+Data quality monitoring at scale with Agentic AI
+• AI-assisted monitoring for data quality issues.
+
+Connect Genie spaces to Microsoft Copilot Studio
+• Integrating Genie with Copilot Studio.
+
+Dashboard and Genie spaces tagging
+• Tagging assets for governance and management.
+
+Database Lakebase
+• Enabling or exploring Lakebase capability for DMC use cases.
+
+FinOps
+
+Top 5 current spenders analysis
+• Identifying the highest-cost applications or platform areas.
+
+Cluster and warehouse resizing
+• Reducing cost by right-sizing clusters and warehouses.
+
+Replace SQL Pro
+• Moving to more cost-effective alternatives where possible.
+
+SQL improvement and query optimization
+• Improving expensive or inefficient SQL queries.
+
+Data sharing optimization
+• Making shared data usage patterns more efficient.
+
+Serverless enablement
+• Using serverless where it improves efficiency and cost.
+
+Downstream AWS infrastructure optimization
+• Optimizing supporting AWS compute and storage footprint.
+
+Optimize instance type for compute
+• Choosing better instance families for workloads.
+
+Databricks account team guidance / best practices
+• Using Databricks optimization guidance for application teams.
+
+Build a decision tree or framework for cost optimization
+• Creating a standard optimization playbook.
+
+Onboarding documentation for cost and governance
+• Providing cost and governance guidance for new teams.
+
+Optimize most expensive clusters
+• Targeting the highest-cost clusters first.
+
+Enable Photon Engine and define governance for where to use it
+• Using Photon where it improves performance and cost with clear standards.
+
+Identify longest-running and most expensive queries
+• Finding high-cost queries that need tuning.
+
+Optimize non-production environments when cost exceeds 25% of total platform cost
+• Reducing unnecessary non-production spend.
+
+Leverage Adaptive Query Execution (AQE)
+• Improving query efficiency using AQE.
+
+Right-size clusters and use autoscaling
+• Reducing overprovisioning through better sizing.
+
+Use Spot instances for non-production workloads
+• Lowering cost through spot usage in non-production.
+
+Ensure tracking of work and optimization delivered
+• Tracking completed work and savings delivered.
