@@ -1,1 +1,22 @@
+| Requirement                                                                       | What it is about                                                |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Top 5 current spenders analysis                                                   | Identifying the highest-cost applications/platform areas.       |
+| Cluster and warehouse resizing                                                    | Reducing cost by right-sizing clusters and warehouses.          |
+| Replace SQL Pro                                                                   | Moving to more cost-effective alternatives where possible.      |
+| SQL improvement and query optimization                                            | Improving expensive or inefficient SQL queries.                 |
+| Data sharing optimization                                                         | Making shared data usage patterns more efficient.               |
+| Serverless enablement                                                             | Using serverless where it improves efficiency and cost.         |
+| Downstream AWS infrastructure optimization                                        | Optimizing supporting AWS compute/storage footprint.            |
+| Optimize instance type for compute                                                | Choosing better instance families for workloads.                |
+| Databricks account team guidance / best practices                                 | Using Databricks optimization guidance for application teams.   |
+| Build a decision tree or framework for cost optimization                          | Creating a standard optimization playbook.                      |
+| Onboarding documentation for cost and governance                                  | Providing cost/governance guidance for new teams.               |
+| Optimize most expensive clusters                                                  | Targeting the highest-cost clusters first.                      |
+| Enable Photon Engine and define governance for where to use it                    | Using Photon where it improves performance/cost with standards. |
+| Identify longest-running and most expensive queries                               | Finding high-cost queries that need tuning.                     |
+| Optimize non-production environments when cost exceeds 25% of total platform cost | Reducing unnecessary non-prod spend.                            |
+| Leverage Adaptive Query Execution (AQE)                                           | Improving query efficiency using AQE.                           |
+| Right-size clusters and use autoscaling                                           | Reducing overprovisioning through better sizing.                |
+| Use Spot instances for non-production workloads                                   | Lowering cost through spot usage in non-prod.                   |
+| Ensure tracking of work and optimization delivered                                | Tracking completed work and savings delivered.                  |
 
