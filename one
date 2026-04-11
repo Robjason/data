@@ -1,1 +1,71 @@
+AWS Central – Priority View
+Priority 1 – Foundational / Immediate Platform Enablement
 
+These are the most important items because they unblock multiple downstream asks and platform capabilities.
+
+Serverless enablement and rollout
+Cross-cloud Delta Sharing (AWS–Azure)
+DR and HA support across AWS teams
+Managed File Events
+Automatic notifications for expiring personal access tokens / service principal expiry alerts
+Attribute-Based Access Control (ABAC)
+Integrated cost monitoring and Databricks billing/usage dashboard
+Authentication login correction (EID to email format alignment)
+OAuth token federation
+Trigger jobs when source tables are updated
+PrivateLink implementation
+Databricks Apps enablement (dependent on serverless)
+Why these are high priority
+
+These items establish the platform foundation, strengthen governance, improve operational control, and support multiple future features such as advanced engineering workflows, integrations, and AI capabilities.
+
+Priority 2 – Shared Engineering, Connectivity, and Operational Controls
+
+These are the next set of important requirements needed to improve engineering productivity, integrations, and operational maturity.
+
+Databricks SQL alerts
+Alert enablement / correct email routing
+Lakeflow support (requires serverless)
+Databricks Zerobus feature
+Apache Iceberg REST-compliant catalog setup on top of Unity Catalog
+Lakehouse Connections in CICD for Oracle, Redshift, Salesforce, Snowflake, etc.
+Enable Genie through pipeline
+SharePoint connector
+SFTP connector
+GitHub connectivity / notebook source control integration
+Data as a service
+Secrets vault approach / secure secret management
+Read-only access to all workspaces
+Managed group / service principal access control for pools
+Standardized auto-stop / auto-shutdown implementation
+Marketplace enablement
+Snowflake connection type support
+External location support improvements
+Enable file events in external locations
+Dedicated VPC for Databricks
+Why these are important
+
+These requests help AWS Central support application onboarding, integrations, operational stability, platform standardization, and engineering automation.
+
+Priority 3 – Strategic / Advanced Capability Enablement
+
+These are strategic items that improve innovation, optimization, and long-term platform maturity.
+
+Databricks Genie enablement
+Data Quality Monitoring at scale with Agentic AI
+Connect Genie spaces to Microsoft Copilot Studio
+Dashboard and Genie spaces tagging
+Agentic computing and MCP service enablement
+Database Lakebase
+Data lifecycle management for hot/cold storage, archival, and deletion
+Model serving endpoint
+Databricks usage dashboard enhancements
+Bundle-based cost analysis support
+Integration between AWS Central Databricks and GCS JupiterOne
+Promote app config values from DEV → UAT → PROD
+Support procedures / platform operational support improvements
+Install R library on Databricks cluster
+Enhance AWS Transfer Family–related user details screen
+Why these are lower in execution priority
+
+These items are important for maturity and innovation, but many of them depend on foundational platform controls, serverless readiness, networking, governance, and core operational features being in place first.
