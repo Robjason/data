@@ -1,113 +1,113 @@
-Team	Requirement	Description
-DKP	AWS Federated Databricks setup	Establishing the AWS federated Databricks platform model and onboarding pattern.
-DKP	Azure Databricks serverless enablement	Enabling serverless capability on the Azure Databricks side.
-DKP	Serverless network policy updates	Updating network rules and controls required for secure serverless usage.
-DKP	Secure package installation for serverless workloads	Allowing packages through approved internal repositories instead of public internet sources.
-DKP	Approved outbound access model for serverless	Defining what destinations serverless workloads can access.
-DKP	Serverless governance and control framework	Putting standards, controls, and guardrails around serverless usage.
-DKP	Cross-cloud Databricks platform alignment	Aligning Azure and AWS Databricks patterns and standards.
-DKP	Serverless connectivity and dependency support	Ensuring serverless workloads can reach required internal and external dependencies.
-DKP	Internal repository integration for package management	Integrating internal artifact and package repositories for secure dependency management.
-AWS Central	Automatic email notifications for expiring personal access tokens	Alerting users before tokens expire.
-AWS Central	Attribute-Based Access Control (ABAC)	Fine-grained access control using user and data attributes.
-AWS Central	Databricks Genie enablement	Enabling natural language and AI-driven interaction features in Databricks.
-AWS Central	Serverless enablement	Rolling out serverless compute on AWS Databricks.
-AWS Central	Delta Sharing (AWS–Azure)	Supporting secure data sharing between AWS and Azure Databricks.
-AWS Central	DR and HA support	Supporting disaster recovery and high availability patterns.
-AWS Central	Managed File Events	Triggering workflows based on file arrival or file events.
-AWS Central	Integrated cost monitoring and per-app annual budgets	Centralized cost visibility and budget tracking.
-AWS Central	Databricks authentication login correction from EID to email ID	Aligning login identity format.
-AWS Central	OAuth token federation	Supporting federated token-based authentication.
-AWS Central	Trigger jobs when source tables are updated	Running jobs automatically when source tables change.
-AWS Central	SharePoint connector	Integrating Databricks with SharePoint sources.
-AWS Central	PrivateLink implementation	Enabling private networking for Databricks-related access.
-AWS Central	Databricks Apps enablement	Enabling Databricks Apps capability where supported.
-AWS Central	Databricks SQL alerts	Alerting based on SQL or dashboard conditions.
-AWS Central	Alert enablement	General operational alerting support.
-AWS Central	Lakeflow support	Supporting Lakeflow-based engineering workflows.
-AWS Central	Databricks Zerobus feature	Enabling Zerobus-related feature capability.
-AWS Central	Apache Iceberg REST-compliant catalog setup on top of Unity Catalog	Supporting Iceberg catalog access in a standards-based way.
-AWS Central	Lakehouse Connections in CICD	Supporting external connections through CICD pipelines.
-AWS Central	Enable Genie through pipeline	Managing Genie enablement through deployment pipelines.
-AWS Central	Access recertification for service principals	Periodic review and validation of service principal access.
-AWS Central	Databricks secrets vault	Defining a secure secret-management approach.
-AWS Central	Data classification	Applying governance and sensitivity classification to data.
-AWS Central	SFTP connector	Supporting secure file transfer integration.
-AWS Central	GitHub connectivity	Enabling notebook and code source control through GitHub.
-AWS Central	Data as a service	Enabling reusable shared data products for consumers.
-AWS Central	Data lifecycle management – hot/cold storage, archival, deletion	Defining how data is retained, archived, and deleted.
-AWS Central	Data quality monitoring at scale with Agentic AI	Using AI-assisted methods to monitor data quality at scale.
-AWS Central	Connect Genie spaces to Microsoft Copilot Studio	Integrating Genie capabilities with Microsoft Copilot Studio.
-AWS Central	Dashboard and Genie spaces tagging	Tagging assets for governance and management.
-AWS Central	Agentic computing and MCP service enablement in Databricks	Supporting advanced agent-based AI and MCP capabilities.
-AWS Central	Database Lakebase	Exploring or enabling Lakebase-related database capability.
-AWS Central	New feature for support procedure	Improving platform support procedures.
-AWS Central	Enabling Personal Access Tokens	Supporting PAT-related platform requests.
-AWS Central	Managed group/service principal for Databricks pool access control	Managing pool access using groups or service principals.
-AWS Central	Read-only access to all workspaces	Providing visibility across workspaces for support and governance.
-AWS Central	Install R library on Databricks cluster	Supporting workloads that require R libraries.
-AWS Central	Enable Databricks Usage Dashboard	Providing Databricks usage visibility.
-AWS Central	Promote app config values from DEV to UAT to PROD	Supporting config promotion across environments.
-AWS Central	Support Databricks external location with path pattern without region	Enhancing external location support for specific path patterns.
-AWS Central	Enhance user details screen for AWS Transfer Family server	Improving AWS Transfer Family-related visibility or function.
-AWS Central	Databricks standardized auto-stop / shut down implementation	Standardizing auto-stop patterns to reduce waste.
-AWS Central	Request to enable Marketplace feature for IDU	Enabling Databricks Marketplace for a specific use case.
-AWS Central	Request to support Databricks connection type: Snowflake	Supporting Snowflake connectivity within Databricks.
-AWS Central	Cost Analysis: Enable Databricks Bundle feature	Supporting bundle feature for cost or deployment use cases.
-AWS Central	Databricks Model Serving Endpoint	Supporting model serving for ML and AI use cases.
-AWS Central	Integration between AWS Central Databricks and GCS JupiterOne	Integrating Databricks with JupiterOne for visibility and governance.
-AWS Central	Enable file event in external location	Supporting event-driven workflows on external storage locations.
-AWS Central	Databricks to Snowflake data sharing	Supporting data sharing between Databricks and Snowflake.
-AWS Central	Dedicated VPC for Databricks	Creating a dedicated VPC for Databricks isolation and control.
-SSGA	PrivateLink	Private network connectivity for the SSGA Databricks environment.
-SSGA	Serverless compute enabled via CICD	Enabling and managing serverless through CICD processes.
-SSGA	Serverless tagging	Applying governance and cost tags to serverless resources.
-SSGA	Genie / AI features enablement	Enabling AI-driven Databricks features.
-SSGA	Embedding feature enablement	Supporting embedding-related AI capabilities.
-SSGA	Federated data sharing / replication	Secure data sharing and replication across environments.
-SSGA	DLT feature	Supporting Delta Live Tables capability.
-SSGA	Oracle connector certificate	Supporting certificate requirements for Oracle connectivity.
-SSGA	Observability	Improving monitoring, logging, and platform visibility.
-SSGA	Feature enhancement collaboration with DKP and DPE	Joint work on platform improvements requiring coordination.
-SSGA	Shared implementation support	Supporting environment-specific implementation work.
-SSGA	Apache Iceberg REST-compliant catalog setup dependency	SSGA PrivateLink is needed to support this capability.
-SSGA	Lakehouse Connections in CICD dependency	SSGA PrivateLink is needed to support this capability.
-SSGA	Managed File Events	Supporting file-based event-driven processing.
-SSGA	Data sharing pipeline support	Supporting data sharing workflows and pipelines.
-SSGA	Enable Genie through pipeline	Supporting pipeline-based Genie enablement.
-DMC	Automatic email notifications for expiring personal access tokens	Alerting users before token expiry.
-DMC	Attribute-Based Access Control (ABAC)	Fine-grained access control based on attributes.
-DMC	Access recertification for service principals	Periodic review of service principal access.
-DMC	Databricks authentication login correction from EID to email ID	Correcting login format to email-based access.
-DMC	OAuth token federation	Supporting federated token-based authentication.
-DMC	Data classification	Applying governance classification to data.
-DMC	SharePoint connector	Connecting Databricks to SharePoint sources.
-DMC	SFTP connector	Supporting secure file transfer connectivity.
-DMC	GitHub connectivity	Enabling GitHub integration for source control.
-DMC	Databricks SQL alerts	Alerting based on SQL conditions.
-DMC	Trigger jobs when source tables are updated	Event-driven job execution on source data change.
-DMC	Alert enablement	Broader operational alerting support.
-DMC	Data as a service	Enabling reusable shared data delivery.
-DMC	Data quality monitoring at scale with Agentic AI	AI-assisted monitoring for data quality issues.
-DMC	Connect Genie spaces to Microsoft Copilot Studio	Integrating Genie with Copilot Studio.
-DMC	Dashboard and Genie spaces tagging	Tagging assets for governance and management.
-DMC	Database Lakebase	Enabling or exploring Lakebase capability for DMC use cases.
-FinOps	Top 5 current spenders analysis	Identifying the highest-cost applications or platform areas.
-FinOps	Cluster and warehouse resizing	Reducing cost by right-sizing clusters and warehouses.
-FinOps	Replace SQL Pro	Moving to more cost-effective alternatives where possible.
-FinOps	SQL improvement and query optimization	Improving expensive or inefficient SQL queries.
-FinOps	Data sharing optimization	Making shared data usage patterns more efficient.
-FinOps	Serverless enablement	Using serverless where it improves efficiency and cost.
-FinOps	Downstream AWS infrastructure optimization	Optimizing supporting AWS compute and storage footprint.
-FinOps	Optimize instance type for compute	Choosing better instance families for workloads.
-FinOps	Databricks account team guidance / best practices	Using Databricks optimization guidance for application teams.
-FinOps	Build a decision tree or framework for cost optimization	Creating a standard optimization playbook.
-FinOps	Onboarding documentation for cost and governance	Providing cost and governance guidance for new teams.
-FinOps	Optimize most expensive clusters	Targeting the highest-cost clusters first.
-FinOps	Enable Photon Engine and define governance for where to use it	Using Photon where it improves performance and cost with clear standards.
-FinOps	Identify longest-running and most expensive queries	Finding high-cost queries that need tuning.
-FinOps	Optimize non-production environments when cost exceeds 25% of total platform cost	Reducing unnecessary non-production spend.
-FinOps	Leverage Adaptive Query Execution (AQE)	Improving query efficiency using AQE.
-FinOps	Right-size clusters and use autoscaling	Reducing overprovisioning through better sizing.
-FinOps	Use Spot instances for non-production workloads	Lowering cost through spot usage in non-production.
-FinOps	Ensure tracking of work and optimization delivered	Tracking completed work and savings delivered.
+Team	Requirement	Description	Priority
+DKP	AWS Federated Databricks setup	Establishing the AWS federated Databricks platform model and onboarding pattern.	Priority 1
+	Azure Databricks serverless enablement	Enabling serverless capability on the Azure Databricks side.	Priority 1
+	Serverless network policy updates	Updating network rules and controls required for secure serverless usage.	Priority 1
+	Secure package installation for serverless workloads	Allowing packages through approved internal repositories instead of public internet sources.	Priority 1
+	Approved outbound access model for serverless	Defining what destinations serverless workloads can access.	Priority 1
+	Serverless governance and control framework	Putting standards, controls, and guardrails around serverless usage.	Priority 1
+	Cross-cloud Databricks platform alignment	Aligning Azure and AWS Databricks patterns and standards.	Priority 1
+	Serverless connectivity and dependency support	Ensuring serverless workloads can reach required internal and external dependencies.	Priority 2
+	Internal repository integration for package management	Integrating internal artifact and package repositories for secure dependency management.	Priority 2
+AWS Central	Automatic email notifications for expiring personal access tokens	Alerting users before tokens expire.	Priority 1
+	Attribute-Based Access Control (ABAC)	Fine-grained access control using user and data attributes.	Priority 1
+	Databricks Genie enablement	Enabling natural language and AI-driven interaction features in Databricks.	Priority 2
+	Serverless enablement	Rolling out serverless compute on AWS Databricks.	Priority 1
+	Delta Sharing (AWS–Azure)	Supporting secure data sharing between AWS and Azure Databricks.	Priority 1
+	DR and HA support	Supporting disaster recovery and high availability patterns.	Priority 1
+	Managed File Events	Triggering workflows based on file arrival or file events.	Priority 1
+	Integrated cost monitoring and per-app annual budgets	Centralized cost visibility and budget tracking.	Priority 1
+	Databricks authentication login correction from EID to email ID	Aligning login identity format.	Priority 1
+	OAuth token federation	Supporting federated token-based authentication.	Priority 1
+	Trigger jobs when source tables are updated	Running jobs automatically when source tables change.	Priority 1
+	SharePoint connector	Integrating Databricks with SharePoint sources.	Priority 2
+	PrivateLink implementation	Enabling private networking for Databricks-related access.	Priority 1
+	Databricks Apps enablement	Enabling Databricks Apps capability where supported.	Priority 2
+	Databricks SQL alerts	Alerting based on SQL or dashboard conditions.	Priority 1
+	Alert enablement	General operational alerting support.	Priority 2
+	Lakeflow support	Supporting Lakeflow-based engineering workflows.	Priority 2
+	Databricks Zerobus feature	Enabling Zerobus-related feature capability.	Priority 2
+	Apache Iceberg REST-compliant catalog setup on top of Unity Catalog	Supporting Iceberg catalog access in a standards-based way.	Priority 2
+	Lakehouse Connections in CICD	Supporting external connections through CICD pipelines.	Priority 2
+	Enable Genie through pipeline	Managing Genie enablement through deployment pipelines.	Priority 2
+	Access recertification for service principals	Periodic review and validation of service principal access.	Priority 2
+	Databricks secrets vault	Defining a secure secret-management approach.	Priority 2
+	Data classification	Applying governance and sensitivity classification to data.	Priority 2
+	SFTP connector	Supporting secure file transfer integration.	Priority 2
+	GitHub connectivity	Enabling notebook and code source control through GitHub.	Priority 2
+	Data as a service	Enabling reusable shared data products for consumers.	Priority 2
+	Data lifecycle management – hot/cold storage, archival, deletion	Defining how data is retained, archived, and deleted.	Priority 2
+	Data quality monitoring at scale with Agentic AI	Using AI-assisted methods to monitor data quality at scale.	Priority 2
+	Connect Genie spaces to Microsoft Copilot Studio	Integrating Genie capabilities with Microsoft Copilot Studio.	Priority 2
+	Dashboard and Genie spaces tagging	Tagging assets for governance and management.	Priority 2
+	Agentic computing and MCP service enablement in Databricks	Supporting advanced agent-based AI and MCP capabilities.	Priority 2
+	Database Lakebase	Exploring or enabling Lakebase-related database capability.	Priority 2
+	New feature for support procedure	Improving platform support procedures.	Priority 2
+	Enabling Personal Access Tokens	Supporting PAT-related platform requests.	Priority 2
+	Managed group/service principal for Databricks pool access control	Managing pool access using groups or service principals.	Priority 2
+	Read-only access to all workspaces	Providing visibility across workspaces for support and governance.	Priority 2
+	Install R library on Databricks cluster	Supporting workloads that require R libraries.	Priority 2
+	Enable Databricks Usage Dashboard	Providing Databricks usage visibility.	Priority 2
+	Promote app config values from DEV to UAT to PROD	Supporting config promotion across environments.	Priority 2
+	Support Databricks external location with path pattern without region	Enhancing external location support for specific path patterns.	Priority 2
+	Enhance user details screen for AWS Transfer Family server	Improving AWS Transfer Family-related visibility or function.	Priority 2
+	Databricks standardized auto-stop / shut down implementation	Standardizing auto-stop patterns to reduce waste.	Priority 2
+	Request to enable Marketplace feature for IDU	Enabling Databricks Marketplace for a specific use case.	Priority 2
+	Request to support Databricks connection type: Snowflake	Supporting Snowflake connectivity within Databricks.	Priority 2
+	Cost Analysis: Enable Databricks Bundle feature	Supporting bundle feature for cost or deployment use cases.	Priority 2
+	Databricks Model Serving Endpoint	Supporting model serving for ML and AI use cases.	Priority 2
+	Integration between AWS Central Databricks and GCS JupiterOne	Integrating Databricks with JupiterOne for visibility and governance.	Priority 2
+	Enable file event in external location	Supporting event-driven workflows on external storage locations.	Priority 2
+	Databricks to Snowflake data sharing	Supporting data sharing between Databricks and Snowflake.	Priority 2
+	Dedicated VPC for Databricks	Creating a dedicated VPC for Databricks isolation and control.	Priority 1
+SSGA	PrivateLink	Private network connectivity for the SSGA Databricks environment.	Priority 1
+	Serverless compute enabled via CICD	Enabling and managing serverless through CICD processes.	Priority 1
+	Serverless tagging	Applying governance and cost tags to serverless resources.	Priority 1
+	Genie / AI features enablement	Enabling AI-driven Databricks features.	Priority 2
+	Embedding feature enablement	Supporting embedding-related AI capabilities.	Priority 2
+	Federated data sharing / replication	Secure data sharing and replication across environments.	Priority 1
+	DLT feature	Supporting Delta Live Tables capability.	Priority 1
+	Oracle connector certificate	Supporting certificate requirements for Oracle connectivity.	Priority 1
+	Observability	Improving monitoring, logging, and platform visibility.	Priority 1
+	Feature enhancement collaboration with DKP and DPE	Joint work on platform improvements requiring coordination.	Priority 2
+	Shared implementation support	Supporting environment-specific implementation work.	Priority 2
+	Apache Iceberg REST-compliant catalog setup dependency	SSGA PrivateLink is needed to support this capability.	Priority 2
+	Lakehouse Connections in CICD dependency	SSGA PrivateLink is needed to support this capability.	Priority 2
+	Managed File Events	Supporting file-based event-driven processing.	Priority 2
+	Data sharing pipeline support	Supporting data sharing workflows and pipelines.	Priority 2
+	Enable Genie through pipeline	Supporting pipeline-based Genie enablement.	Priority 2
+DMC	Automatic email notifications for expiring personal access tokens	Alerting users before token expiry.	Priority 1
+	Attribute-Based Access Control (ABAC)	Fine-grained access control based on attributes.	Priority 2
+	Access recertification for service principals	Periodic review of service principal access.	Priority 2
+	Databricks authentication login correction from EID to email ID	Correcting login format to email-based access.	Priority 1
+	OAuth token federation	Supporting federated token-based authentication.	Priority 1
+	Data classification	Applying governance classification to data.	Priority 2
+	SharePoint connector	Connecting Databricks to SharePoint sources.	Priority 2
+	SFTP connector	Supporting secure file transfer connectivity.	Priority 1
+	GitHub connectivity	Enabling GitHub integration for source control.	Priority 2
+	Databricks SQL alerts	Alerting based on SQL conditions.	Priority 1
+	Trigger jobs when source tables are updated	Event-driven job execution on source data change.	Priority 1
+	Alert enablement	Broader operational alerting support.	Priority 2
+	Data as a service	Enabling reusable shared data delivery.	Priority 2
+	Data quality monitoring at scale with Agentic AI	AI-assisted monitoring for data quality issues.	Priority 2
+	Connect Genie spaces to Microsoft Copilot Studio	Integrating Genie with Copilot Studio.	Priority 2
+	Dashboard and Genie spaces tagging	Tagging assets for governance and management.	Priority 2
+	Database Lakebase	Enabling or exploring Lakebase capability for DMC use cases.	Priority 2
+FinOps	Top 5 current spenders analysis	Identifying the highest-cost applications or platform areas.	Priority 1
+	Cluster and warehouse resizing	Reducing cost by right-sizing clusters and warehouses.	Priority 1
+	Replace SQL Pro	Moving to more cost-effective alternatives where possible.	Priority 1
+	SQL improvement and query optimization	Improving expensive or inefficient SQL queries.	Priority 1
+	Data sharing optimization	Making shared data usage patterns more efficient.	Priority 2
+	Serverless enablement	Using serverless where it improves efficiency and cost.	Priority 1
+	Downstream AWS infrastructure optimization	Optimizing supporting AWS compute and storage footprint.	Priority 1
+	Optimize instance type for compute	Choosing better instance families for workloads.	Priority 1
+	Databricks account team guidance / best practices	Using Databricks optimization guidance for application teams.	Priority 2
+	Build a decision tree or framework for cost optimization	Creating a standard optimization playbook.	Priority 2
+	Onboarding documentation for cost and governance	Providing cost and governance guidance for new teams.	Priority 2
+	Optimize most expensive clusters	Targeting the highest-cost clusters first.	Priority 1
+	Enable Photon Engine and define governance for where to use it	Using Photon where it improves performance and cost with clear standards.	Priority 1
+	Identify longest-running and most expensive queries	Finding high-cost queries that need tuning.	Priority 1
+	Optimize non-production environments when cost exceeds 25% of total platform cost	Reducing unnecessary non-production spend.	Priority 2
+	Leverage Adaptive Query Execution (AQE)	Improving query efficiency using AQE.	Priority 2
+	Right-size clusters and use autoscaling	Reducing overprovisioning through better sizing.	Priority 2
+	Use Spot instances for non-production workloads	Lowering cost through spot usage in non-production.	Priority 2
+	Ensure tracking of work and optimization delivered	Tracking completed work and savings delivered.	Priority 1
