@@ -1,60 +1,37 @@
-DKP
+WITH app_mapping AS (
+  SELECT
+    workspace_id,
+    custom_tags['APP_CODE'] AS app_code,
+    custom_tags['APP_NAME'] AS app_name,
+    MAX(usage_end_time) AS latest_usage_date,
+    COUNT(*) AS usage_record_count
+  FROM system.billing.usage
+  WHERE custom_tags['APP_CODE'] IS NOT NULL
+    AND custom_tags['APP_NAME'] IS NOT NULL
+  GROUP BY
+    workspace_id,
+    custom_tags['APP_CODE'],
+    custom_tags['APP_NAME']
+),
 
-AWS Federated Databricks setup
-Support for all Databricks accounts
-Unified Databricks billing and usage dashboard for centralized cost monitoring across all accounts
-Cross-cloud Delta Sharing between Azure and AWS
-Azure Databricks serverless enablement with proper tagging and governance
-Serverless network policy implementation and enhancements
-Collaboration with GL team to support requirements such as Serverless, Delta Sharing, and Genie
+ranked_app AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY workspace_id
+      ORDER BY latest_usage_date DESC, usage_record_count DESC
+    ) AS rn
+  FROM app_mapping
+)
 
-AWS Central
-
-AWS Databricks serverless enablement and expansion
-Cross-cloud Delta Sharing between AWS and Azure
-DR and HA support for AWS platform teams
-Managed File Events enablement
-PrivateLink implementation
-Authentication and OAuth enhancements
-Trigger-based job orchestration and alerting
-Lakehouse connectivity and connector enablement
-AI, Genie, and advanced Databricks capability enablement
-
-SSIM
-
-PrivateLink implementation for the SSGA environment
-Serverless compute enablement through CI/CD
-Serverless tagging enablement
-Federated data sharing and replication support
-DR and HA support
-DLT enablement
-Oracle connector certificate support
-Observability enhancements
-Genie, AI, and embedding feature enablement
-Shared implementation and collaboration with DKP and DPE
-
-FINOPS
-
-Analysis of top Databricks spenders across the platform
-Cluster and warehouse rightsizing
-SQL optimization and expensive query reduction
-Serverless optimization opportunities
-AWS infrastructure sizing and storage optimization
-Photon enablement and usage governance
-Cost optimization framework and best practices
-Optimization of high-cost clusters and non-production environments
-Spot instance adoption for non-production workloads
-Tracking delivered savings and optimization outcomes
-
-DMC
-
-Authentication login migration from EID to email ID
-Token expiry notification support
-OAuth token federation
-SFTP and SharePoint connector enablement
-SQL alerts and broader alerting capabilities
-Trigger-based job execution on source table updates
-Access and governance enhancements, including ABAC and service principal recertification
-GitHub connectivity enablement
-Data-as-a-Service enablement
-Dashboard, Genie, and Copilot feature enablement
+SELECT
+  wl.*,
+  ra.app_code,
+  ra.app_name,
+  ra.latest_usage_date,
+  ra.usage_record_count
+FROM system.compute.workspaces_latest wl
+LEFT JOIN ranked_app ra
+  ON wl.workspace_id = ra.workspace_id
+ AND ra.rn = 1
+ORDER BY wl.workspace_id;
