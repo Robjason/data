@@ -1,37 +1,12 @@
-WITH app_mapping AS (
-  SELECT
-    workspace_id,
-    custom_tags['APP_CODE'] AS app_code,
-    custom_tags['APP_NAME'] AS app_name,
-    MAX(usage_end_time) AS latest_usage_date,
-    COUNT(*) AS usage_record_count
-  FROM system.billing.usage
-  WHERE custom_tags['APP_CODE'] IS NOT NULL
-    AND custom_tags['APP_NAME'] IS NOT NULL
-  GROUP BY
-    workspace_id,
-    custom_tags['APP_CODE'],
-    custom_tags['APP_NAME']
-),
-
-ranked_app AS (
-  SELECT
-    *,
-    ROW_NUMBER() OVER (
-      PARTITION BY workspace_id
-      ORDER BY latest_usage_date DESC, usage_record_count DESC
-    ) AS rn
-  FROM app_mapping
-)
-
 SELECT
-  wl.*,
-  ra.app_code,
-  ra.app_name,
-  ra.latest_usage_date,
-  ra.usage_record_count
+  wl.workspace_id,
+  wl.workspace_name,
+  COUNT(DISTINCT c.storage_root) AS storage_root_count
 FROM system.compute.workspaces_latest wl
-LEFT JOIN ranked_app ra
-  ON wl.workspace_id = ra.workspace_id
- AND ra.rn = 1
-ORDER BY wl.workspace_id;
+LEFT JOIN system.information_schema.catalogs c
+  ON 1 = 1
+WHERE c.storage_root IS NOT NULL
+GROUP BY
+  wl.workspace_id,
+  wl.workspace_name
+ORDER BY storage_root_count DESC;
