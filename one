@@ -1,2 +1,1 @@
-Current Databricks DR setup is based on a manual passive cross-region recovery model using separate primary and DR workspaces.
-Databricks does not currently provide built-in automated workspace-level cross-region failover capabilities.
+
