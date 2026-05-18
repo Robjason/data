@@ -1,1 +1,32 @@
+CREATE OR REPLACE VIEW dkp_shared_catalog.txt_system_table_views.system_billing_usage AS
+SELECT
+    u.account_id,
+    u.workspace_id,
+    w.workspace_name,
+    w.workspace_url,
+    w.status AS workspace_status,
 
+    coalesce(w.custom_tags['APP_CODE'], w.custom_tags['app_code']) AS app_code,
+    coalesce(w.custom_tags['APP_NAME'], w.custom_tags['app_name']) AS app_name,
+
+    u.sku_name,
+    u.cloud,
+    u.usage_start_time,
+    u.usage_end_time,
+    u.usage_date,
+    u.usage_unit,
+    u.usage_quantity,
+    u.billing_origin_product,
+    u.usage_type,
+    u.custom_tags AS billing_custom_tags,
+
+    to_json(u.usage_metadata) AS usage_metadata_json,
+    to_json(u.identity_metadata) AS identity_metadata_json,
+    to_json(u.product_features) AS product_features_json
+
+FROM system.billing.usage u
+INNER JOIN system.access.workspaces_latest w
+    ON CAST(u.workspace_id AS STRING) = CAST(w.workspace_id AS STRING)
+
+WHERE upper(coalesce(w.custom_tags['APP_CODE'], w.custom_tags['app_code'], '')) = 'TXT'
+  AND lower(w.workspace_name) LIKE '%txt%';
