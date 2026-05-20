@@ -1,17 +1,1 @@
-Subject: Dev Workspace Details Required for Serverless Egress Policy Implementation
 
-Hi Team,
-
-As part of the serverless egress policy change, we are planning to start implementing the new network policy in the dev workspaces first and run it in dry-run mode.
-
-Could you please share the list of dev workspaces where serverless is currently enabled? Once we have the workspace details, we can create the new network policy, attach it to those workspaces, and monitor the outbound traffic logs before enforcing any restrictions.
-
-Also, if there are multiple dev workspaces, please confirm whether you would prefer:
-
-A single network policy attached to all dev workspaces, or
-Individual network policies created separately for each workspace.
-
-Once we receive your confirmation, we can proceed with the implementation in dev.
-
-Thanks,
-Bala
