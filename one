@@ -1,1 +1,34 @@
+Hi Team,
+
+As part of the Azure Databricks-mandated migration to Network Security Perimeter (NSP), all in-scope application-owned Azure Storage Accounts used by Databricks must be reviewed and migrated by July 23.
+
+This migration is required for storage accounts where Azure Databricks serverless access is currently enabled or supported through existing storage firewall configurations, including Databricks serverless subnet/VNet/IP-based allowlisting.
+
+As part of this change, the storage account should be onboarded to Network Security Perimeter in Transition mode, and access should be allowed using the AzureDatabricksServerless service tag. Where applicable, the regional service tag should be used, for example:
+
+AzureDatabricksServerless.<workspace-region>
+
+Transition mode should be used so that NSP rules are evaluated first while existing storage firewall rules remain available as fallback during the migration.
+
+Please note:
+
+This applies to application-owned/custom Azure Storage Accounts used by Azure Databricks serverless workloads.
+Databricks-managed storage accounts will be handled separately by Databricks.
+Existing firewall rules should not be removed as part of this initial transition unless specifically instructed.
+The migration must be completed by July 23.
+
+We have the required SOP, L1, and L2 documentation ready and shared for your reference. Please review these documents carefully and follow the steps for your respective storage accounts.
+
+Requested action from each application team:
+
+Review your application-owned storage accounts used by Azure Databricks.
+Validate whether Databricks serverless access or Databricks-related firewall allowlisting is currently configured.
+Follow the SOP to onboard the storage account to NSP in Transition mode.
+Add the required AzureDatabricksServerless service tag rule as documented.
+Test and confirm access after the change.
+Add or forward this email to any required application owners, delegates, or support contacts who need to be involved.
+
+If you have any questions or need clarification during the review or migration, please reach out to us.
+
+Regards,
 
