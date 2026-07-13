@@ -1,1 +1,26 @@
+WITH latest_clusters AS (
+    SELECT
+        workspace_id,
+        cluster_id,
+        cluster_name,
+        dbr_version,
+        cluster_source,
+        change_time,
+        delete_time,
+        ROW_NUMBER() OVER (
+            PARTITION BY workspace_id, cluster_id
+            ORDER BY change_time DESC
+        ) AS rn
+    FROM system.compute.clusters
+    WHERE cluster_source IN ('UI', 'API')
+)
 
+SELECT
+    workspace_id,
+    cluster_id,
+    cluster_name,
+    dbr_version AS runtime_version
+FROM latest_clusters
+WHERE rn = 1
+  AND delete_time IS NULL
+ORDER BY workspace_id, cluster_name;
