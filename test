@@ -1,26 +1,52 @@
 WITH latest_clusters AS (
     SELECT
+        account_id,
         workspace_id,
         cluster_id,
         cluster_name,
         dbr_version,
-        cluster_source,
         change_time,
         delete_time,
         ROW_NUMBER() OVER (
-            PARTITION BY workspace_id, cluster_id
+            PARTITION BY account_id, workspace_id, cluster_id
             ORDER BY change_time DESC
         ) AS rn
     FROM system.compute.clusters
     WHERE cluster_source IN ('UI', 'API')
+),
+
+latest_billing_tags AS (
+    SELECT
+        account_id,
+        workspace_id,
+        usage_metadata.cluster_id AS cluster_id,
+        element_at(custom_tags, 'APP_CODE') AS app_code,
+        usage_end_time,
+        ROW_NUMBER() OVER (
+            PARTITION BY
+                account_id,
+                workspace_id,
+                usage_metadata.cluster_id
+            ORDER BY usage_end_time DESC
+        ) AS rn
+    FROM system.billing.usage
+    WHERE usage_metadata.cluster_id IS NOT NULL
+      AND element_at(custom_tags, 'APP_CODE') IS NOT NULL
 )
 
 SELECT
-    workspace_id,
-    cluster_id,
-    cluster_name,
-    dbr_version AS runtime_version
-FROM latest_clusters
-WHERE rn = 1
-  AND delete_time IS NULL
-ORDER BY workspace_id, cluster_name;
+    c.workspace_id,
+    c.cluster_id,
+    c.cluster_name,
+    c.dbr_version AS runtime_version,
+    b.app_code,
+    b.usage_end_time AS app_code_last_seen
+FROM latest_clusters c
+LEFT JOIN latest_billing_tags b
+    ON c.account_id = b.account_id
+   AND c.workspace_id = b.workspace_id
+   AND c.cluster_id = b.cluster_id
+   AND b.rn = 1
+WHERE c.rn = 1
+  AND c.delete_time IS NULL
+ORDER BY c.workspace_id, c.cluster_name;
