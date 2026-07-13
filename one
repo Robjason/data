@@ -1,1 +1,36 @@
+WITH latest_clusters AS (
+    SELECT
+        workspace_id,
+        cluster_id,
+        cluster_name,
+        dbr_version,
+        owned_by,
+        cluster_source,
+        tags,
+        create_time,
+        change_time,
+        delete_time,
+        ROW_NUMBER() OVER (
+            PARTITION BY workspace_id, cluster_id
+            ORDER BY change_time DESC
+        ) AS rn
+    FROM system.compute.clusters
+    WHERE cluster_source IN ('UI', 'API')
+)
 
+SELECT
+    workspace_id,
+    cluster_id,
+    cluster_name,
+    dbr_version AS runtime_version,
+    owned_by AS cluster_owner,
+    cluster_source,
+    CASE
+        WHEN delete_time IS NULL THEN 'NOT DELETED'
+        ELSE 'DELETED'
+    END AS cluster_status,
+    create_time,
+    change_time AS last_configuration_change
+FROM latest_clusters
+WHERE rn = 1
+ORDER BY cluster_name;
