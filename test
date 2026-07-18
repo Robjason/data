@@ -1,13 +1,1 @@
-Hi Team,
-
-We have a requirement to retrieve the complete list of schemas available in Unity Catalog across the entire Databricks account.
-
-We tried querying the Unity Catalog system tables and `information_schema`, but the results only include catalogs and schemas for which the current user has access. There are also catalogs that are bound to specific workspaces, as well as catalogs to which we currently do not have permissions, so those schema details are not being returned.
-
-Could you please confirm whether there is a way for an account admin or metastore admin to retrieve a complete inventory of all catalogs and schemas across the account, including workspace-bound catalogs and objects that are not accessible to the querying user?
-
-Please also let us know if any additional permissions, APIs, account-level endpoints, or admin configurations are required to collect this information.
-
-Thanks,
-Bala Kishore
 
